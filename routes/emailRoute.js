@@ -66,13 +66,13 @@ const generateEmailTemplate = (
           .map(
             ([name, value], index) => `
         <td align="center" valign="top"
-          style="background:rgba(255,255,255,0.12);
+          style="background:rgba(255,255,255,0.15);
                  border:1px solid rgba(255,255,255,0.25);
                  border-radius:10px;
                  color:#fff;
                  width:45%;
-                 padding:12px;
-                 margin:6px;">
+                 padding:14px;
+                 margin:8px;">
           <div style="font-size:15px;font-weight:600;margin-bottom:4px;">${name}</div>
           <div style="font-size:16px;font-weight:700;color:#FFD700;">Rs. ${Number(
             value
@@ -96,41 +96,54 @@ const generateEmailTemplate = (
     background-color: #f4f3f9;
     margin: 0;
     padding: 0;
-    -webkit-font-smoothing: antialiased;
   }
-  .container {
-    max-width: 650px;
-    margin: 40px auto;
-    background: #ffffff;
-    border-radius: 18px;
-    overflow: hidden;
-    box-shadow: 0 6px 25px rgba(123, 47, 247, 0.15);
-    border: 1px solid #f0f0f0;
-  }
+.container {
+  max-width: 680px;
+  margin: 40px auto;
+  background: #ffffff;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 6px 25px rgba(123,47,247,0.15),
+              0 0 12px rgba(212,175,55,0.25); /* gold glow */
+  border: 3px solid transparent;
+  background-image: linear-gradient(#fff, #fff),
+                    linear-gradient(135deg, #7b2ff7, #d4af37);
+  background-origin: border-box;
+  background-clip: content-box, border-box;
+}
+
+  /* ===== Header (Classic) ===== */
   .header {
     background: linear-gradient(135deg, #7b2ff7 0%, #f107a3 100%);
     color: #fff;
     text-align: center;
-    padding: 40px 20px 30px;
+    padding: 45px 20px 35px;
   }
   .header h1 {
-    font-size: 28px;
+    font-size: 30px;
     margin: 0;
     text-transform: uppercase;
-    font-weight: 700;
+    font-weight: 800;
     letter-spacing: 1px;
   }
+
+  /* ===== Intro / Highlight Section ===== */
   .content {
     padding: 35px 40px;
     color: #333;
     line-height: 1.7;
     text-align: center;
   }
-  .highlight {
+  .tagline {
+    background: #fff4cc;
     color: #7b2ff7;
+    padding: 6px 14px;
+    border-radius: 20px;
     font-weight: 600;
+    display: inline-block;
+    margin-bottom: 10px;
+    font-size: 14px;
   }
-  /* 🟣 Ticket Highlight Box */
   .highlight-box {
     background: linear-gradient(90deg, #7b2ff7 0%, #d4af37 100%);
     color: white;
@@ -140,9 +153,10 @@ const generateEmailTemplate = (
     border-radius: 40px;
     display: inline-block;
     box-shadow: 0 3px 12px rgba(123,47,247,0.25);
-    margin: 20px 0 30px 0;
+    margin-bottom: 10px;
   }
-  /* 🎟️ Lottery Table */
+
+  /* ===== Lottery Table ===== */
   .table-wrapper {
     display: flex;
     justify-content: center;
@@ -154,7 +168,6 @@ const generateEmailTemplate = (
     border-radius: 10px;
     overflow: hidden;
     box-shadow: 0 3px 12px rgba(123,47,247,0.1);
-    margin: 0 auto;
   }
   .ticket-table th {
     background: linear-gradient(90deg, #7b2ff7 0%, #f107a3 100%);
@@ -170,45 +183,28 @@ const generateEmailTemplate = (
     padding: 10px 14px;
     font-size: 14px;
   }
-  .ticket-table tr:hover {
-    background-color: #f9f4ff;
-  }
-  /* ✨ New Modern Stats Box */
+
+  /* ===== Winnings Section ===== */
   .stats-box {
-    background: linear-gradient(90deg, #f8e473, #d4af37);
-    color: #4a148c;
-    border-radius: 18px;
-    padding: 22px 25px;
+    background: linear-gradient(145deg, #ffeb99, #d4af37);
+    color: #3d0066;
+    border-radius: 20px;
+    padding: 25px;
     margin: 25px auto 30px;
-    width: 80%;
+    width: 85%;
     font-weight: 700;
-    font-size: 19px;
+    font-size: 20px;
     box-shadow: 0 3px 15px rgba(212,175,55,0.3);
-    line-height: 1.5;
+    line-height: 1.6;
   }
   .stats-box strong {
     color: #000;
-    font-size: 20px;
+    font-size: 22px;
   }
-  .cta-button {
-    display: inline-block;
-    background: linear-gradient(90deg, #7b2ff7, #f107a3);
-    color: #fff;
-    padding: 12px 28px;
-    border-radius: 30px;
-    text-decoration: none;
-    font-weight: 600;
-    font-size: 15px;
-    margin-top: 20px;
-    transition: all 0.3s ease;
-  }
-  .cta-button:hover {
-    background: linear-gradient(90deg, #f107a3, #7b2ff7);
-    box-shadow: 0 4px 10px rgba(123, 47, 247, 0.3);
-  }
-  /* 🏆 Super Prizes Section */
+
+  /* ===== Super Prizes ===== */
   .super-prize-section {
-    background: linear-gradient(90deg, rgba(123,47,247,1) 0%, rgba(241,7,163,1) 100%);
+    background: linear-gradient(90deg, #7b2ff7 0%, #f107a3 100%);
     color: #fff;
     border-radius: 14px;
     text-align: center;
@@ -223,13 +219,29 @@ const generateEmailTemplate = (
     letter-spacing: 0.8px;
     margin-bottom: 16px;
   }
+
+  /* ===== Footer ===== */
   .footer {
     background: #fafafa;
     text-align: center;
-    padding: 18px;
+    padding: 22px;
     font-size: 13px;
-    color: #888;
+    color: #777;
     border-top: 1px solid #eee;
+  }
+  .social-icons img {
+    width: 22px;
+    margin: 0 6px;
+    opacity: 0.7;
+  }
+  .social-icons img:hover {
+    opacity: 1;
+  }
+
+  @media only screen and (max-width: 600px) {
+    .content { padding: 25px 20px; }
+    .ticket-table { width: 100%; }
+    .stats-box { width: 100%; font-size: 18px; }
   }
 </style>
 </head>
@@ -240,15 +252,17 @@ const generateEmailTemplate = (
     </div>
 
     <div class="content">
+      <div class="tagline">⭐ Customer of the Week</div>
       <h2>Dear ${name || "Valued Customer"},</h2>
-      <p>We are thrilled to recognize you as one of our most <span class="highlight">valued customers</span> this week! 🌟</p>
+      <p>We are delighted to recognize you as one of our most valued customer this week!</p>
 
-      <!-- 🟣 Ticket Highlight -->
       <div class="highlight-box">
-        You’ve purchased <strong>${tickets || 0}</strong> total tickets from <strong>WinWay</strong>
+        You’ve purchased <strong>${
+          tickets || 0
+        }</strong> total tickets this week
       </div>
 
-      <p>Here’s your detailed ticket summary:</p>
+      <p style="margin-bottom:20px;">Here’s your detailed ticket summary:</p>
 
       <div class="table-wrapper">
         <table class="ticket-table" align="center">
@@ -271,8 +285,8 @@ const generateEmailTemplate = (
       </div>
 
       <p>
-        Keep the winning momentum going and don’t miss out on our <strong>Next Super Prizes</strong>!  
-        Every ticket brings you one step closer to your next big win 🏆.
+        Keep your luck rolling — every ticket gives you another chance at amazing rewards!  
+        Don’t miss our <strong>Next Super Prizes</strong> below 🏆.
       </p>
 
       <div class="super-prize-section">
@@ -284,22 +298,24 @@ const generateEmailTemplate = (
 
       <p style="margin-top:30px;">
         Warm regards,<br/>
-        <strong>The WinWay Team</strong><br/>
+        <strong>The WinWay Loyalty Team</strong><br/>
         <span style="font-size:13px;color:#777;">📞 0707884884 | 0722884884</span>
       </p>
-
-      <a href="#" class="cta-button">View This Week’s Prizes</a>
     </div>
 
     <div class="footer">
-      © ${new Date().getFullYear()} WinWay (Pvt) Ltd. All rights reserved.
+      <div class="social-icons">
+        <img src="https://cdn-icons-png.flaticon.com/512/733/733547.png" alt="Facebook" />
+        <img src="https://cdn-icons-png.flaticon.com/512/2111/2111463.png" alt="Instagram" />
+        <img src="https://cdn-icons-png.flaticon.com/512/733/733579.png" alt="Twitter" />
+      </div>
+      <p>© ${new Date().getFullYear()} WinWay (Pvt) Ltd. All rights reserved.</p>
     </div>
   </div>
 </body>
 </html>
 `;
 };
-
 
 async function sendEmail(req, res, useTemplate = false) {
   try {
@@ -337,7 +353,7 @@ async function sendEmail(req, res, useTemplate = false) {
     const mailOptions = {
       from: `"WinWay " <${process.env.EMAIL_USER}>`,
       to,
-      subject: subject || "🎯 WinWay Update",
+      subject: subject || "WinWay Update",
       text: text || "",
       html: useTemplate
         ? generateEmailTemplate(
@@ -370,8 +386,10 @@ router.post("/send", upload.array("attachments"), (req, res) =>
 );
 
 // ✅ Customer emails (HTML template with table)
-router.post("/sendToCustomer", upload.array("attachments"), (req, res) =>
-  sendEmail(req, res, true)
-);
+router.post("/sendToCustomer", upload.array("attachments"), (req, res) => {
+  console.log(req.body.tblData);
+
+  sendEmail(req, res, true);
+});
 
 export default router;
