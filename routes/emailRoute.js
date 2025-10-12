@@ -387,8 +387,6 @@ router.post("/send", upload.array("attachments"), (req, res) =>
 
 // ✅ Customer emails (HTML template with table)
 router.post("/sendToCustomer", upload.array("attachments"), (req, res) => {
-  console.log(req.body.tblData);
-
   sendEmail(req, res, true);
 });
 
