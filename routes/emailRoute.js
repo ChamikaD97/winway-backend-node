@@ -20,10 +20,12 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-// 🔧 Create transporter (Gmail)
-const createTransporter = () =>
-  nodemailer.createTransport({
-    service: process.env.EMAIL_SERVICE || "gmail",
+const createTransporter = async () => {
+  const transporter = nodemailer.createTransport({
+    host: process.env.EMAIL_HOST || "mail.kapital.lk",
+    port: 587, // try STARTTLS first
+    secure: false, // STARTTLS (not implicit SSL)
+    requireTLS: true,
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS,
@@ -31,12 +33,13 @@ const createTransporter = () =>
     tls: { rejectUnauthorized: false },
   });
 
-/* ------------------------------------------------------------------
-   🎨 Generate Eye-Catching HTML with Ticket Breakdown
--------------------------------------------------------------------*/
-// =========================================================
-// ✨ WinWay Personalized Email Template with Super Prizes
-// =========================================================
+  transporter.on("error", (err) => {
+    console.error("❌ SMTP Transporter Error:", err);
+  });
+
+  return transporter;
+};
+
 const generateEmailTemplate = (
   name,
   tickets,
@@ -44,22 +47,95 @@ const generateEmailTemplate = (
   tblData = [],
   superPrizes = {}
 ) => {
-  const ticketRows = tblData.length
-    ? tblData
-        .map(
-          (t, i) => `
-        <tr style="background:${i % 2 === 0 ? "#ffffff" : "#fcf8ff"};">
-          <td style="border:1px solid #e0e0e0;padding:10px 14px;text-align:left;font-weight:500;color:#4a148c;">
-            ${t.name}
-          </td>
-          <td style="border:1px solid #e0e0e0;padding:10px 14px;text-align:center;color:#111;">
-            ${t.count}
-          </td>
-        </tr>`
-        )
-        .join("")
-    : `<tr><td colspan="2" style="padding:12px;text-align:center;color:#777;">No ticket data available</td></tr>`;
+  // ✅ Sort ticket data (largest → smallest)
+  const sortedTbl = [...tblData].sort((a, b) => b.count - a.count);
+  const labels = sortedTbl.map((t) => t.name);
+  const values = sortedTbl.map((t) => Number(t.count) || 0);
 
+  // ✅ Color palette (shared between chart and legend)
+  const colors = [
+    "#7b2ff7",
+    "#d4af37",
+    "#f107a3",
+    "#ffcc00",
+    "#00bcd4",
+    "#8bc34a",
+    "#ff5722",
+    "#9c27b0",
+    "#03a9f4",
+    "#cddc39",
+  ];
+
+  // ✅ Chart config (no legend, clean layout)
+  const chartConfig = {
+    type: "pie",
+    data: {
+      datasets: [
+        {
+          data: values,
+          backgroundColor: colors,
+          borderColor: "#fff",
+          borderWidth: 2,
+          offset: 4,
+        },
+      ],
+    },
+    options: {
+      plugins: {
+        legend: { display: false },
+        title: { display: false },
+        datalabels: { display: false },
+      },
+      layout: { padding: 15 },
+      animation: { animateRotate: true, animateScale: true },
+    },
+  };
+
+  // ✅ Chart image URL (smaller)
+  const chartUrl = `https://quickchart.io/chart?c=${encodeURIComponent(
+    JSON.stringify(chartConfig)
+  )}&backgroundColor=white&width=250&height=250&format=png`;
+
+  // ✅ Right-side legend (color left border)
+  const rightLegend = labels
+    .map(
+      (label, i) => `
+      <div style="
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        background:${i % 2 === 0 ? "#fdfaff" : "#ffffff"};
+        border-left:8px solid ${colors[i % colors.length]};
+        border-radius:8px;
+        margin-bottom:8px;
+        padding:10px 16px;
+        box-shadow:0 2px 6px rgba(0,0,0,0.06);
+        font-weight:600;
+        color:#222;
+      ">
+        <div style="
+          flex:1;
+          text-align:left;
+          font-size:14px;
+          letter-spacing:0.2px;
+        ">
+          ${label}
+        </div>
+        <div style="
+          text-align:right;
+          font-size:14px;
+          font-weight:700;
+          color:#444;
+          min-width:40px;
+        ">
+          ${values[i]}
+        </div>
+      </div>
+    `
+    )
+    .join("");
+
+  // ✅ Super prize rows
   const prizeRows =
     superPrizes && Object.keys(superPrizes).length
       ? Object.entries(superPrizes)
@@ -73,8 +149,8 @@ const generateEmailTemplate = (
                  width:45%;
                  padding:14px;
                  margin:8px;">
-          <div style="font-size:15px;font-weight:600;margin-bottom:4px;">${name}</div>
-          <div style="font-size:16px;font-weight:700;color:#FFD700;">Rs. ${Number(
+          <div style="font-size:15px;font-weight:200;margin-bottom:4px;">${name}</div>
+          <div style="font-size:16px;font-weight:200;color:#FFD700;">Rs. ${Number(
             value
           ).toLocaleString()}</div>
         </td>
@@ -83,6 +159,7 @@ const generateEmailTemplate = (
           .join("")
       : `<p style="color:#fff;font-size:14px;">No super prizes available this week.</p>`;
 
+  // ✅ Full Email Template
   return `
 <!DOCTYPE html>
 <html lang="en">
@@ -92,169 +169,61 @@ const generateEmailTemplate = (
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <style>
   body {
-    font-family: 'Segoe UI', Roboto, Arial, sans-serif;
-    background-color: #f4f3f9;
-    margin: 0;
-    padding: 0;
+    font-family:'Segoe UI',Roboto,Arial,sans-serif;
+    background-color:#f4f3f9;
+    margin:0;padding:0;
   }
-.container {
-  max-width: 680px;
-  margin: 40px auto;
-  background: #ffffff;
-  border-radius: 18px;
-  overflow: hidden;
-  box-shadow: 0 6px 25px rgba(123,47,247,0.15),
-              0 0 12px rgba(212,175,55,0.25); /* gold glow */
-  border: 3px solid transparent;
-  background-image: linear-gradient(#fff, #fff),
-                    linear-gradient(135deg, #7b2ff7, #d4af37);
-  background-origin: border-box;
-  background-clip: content-box, border-box;
-}
-
-  /* ===== Header (Classic) ===== */
+  .container {
+    max-width:700px;margin:40px auto;
+    background:#fff;border-radius:18px;overflow:hidden;
+    box-shadow:0 6px 25px rgba(123,47,247,0.15),0 0 12px rgba(212,175,55,0.25);
+    border:3px solid transparent;
+    background-image:linear-gradient(#fff,#fff),linear-gradient(135deg,#7b2ff7,#d4af37);
+    background-origin:border-box;background-clip:content-box,border-box;
+  }
   .header {
-    background: linear-gradient(135deg, #7b2ff7 0%, #f107a3 100%);
-    color: #fff;
-    text-align: center;
-    padding: 45px 20px 35px;
+    background:linear-gradient(135deg,#7b2ff7 0%,#f107a3 100%);
+    color:#fff;text-align:center;padding:45px 20px 35px;
   }
-  .header h1 {
-    font-size: 30px;
-    margin: 0;
-    text-transform: uppercase;
-    font-weight: 800;
-    letter-spacing: 1px;
-  }
-
-  /* ===== Intro / Highlight Section ===== */
-  .content {
-    padding: 35px 40px;
-    color: #333;
-    line-height: 1.7;
-    text-align: center;
-  }
-  .tagline {
-    background: #fff4cc;
-    color: #7b2ff7;
-    padding: 6px 14px;
-    border-radius: 20px;
-    font-weight: 600;
-    display: inline-block;
-    margin-bottom: 10px;
-    font-size: 14px;
-  }
+  .header h1 {font-size:30px;margin:0;text-transform:uppercase;font-weight:800;}
+  .content {padding:35px 40px;color:#333;line-height:1.7;text-align:center;}
   .highlight-box {
-    background: linear-gradient(90deg, #7b2ff7 0%, #d4af37 100%);
-    color: white;
-    font-size: 18px;
-    font-weight: 600;
-    padding: 14px 24px;
-    border-radius: 40px;
-    display: inline-block;
-    box-shadow: 0 3px 12px rgba(123,47,247,0.25);
-    margin-bottom: 10px;
+    background:linear-gradient(90deg,#7b2ff7 0%,#d4af37 100%);
+    color:white;font-size:18px;font-weight:600;
+    padding:14px 24px;border-radius:40px;display:inline-block;
+    box-shadow:0 3px 12px rgba(123,47,247,0.25);margin-bottom:20px;
   }
-
-  /* ===== Lottery Table ===== */
-  .table-wrapper {
-    display: flex;
-    justify-content: center;
-    margin: 15px 0 35px;
+  .chart-wrapper {
+    display:flex;justify-content:center;align-items:center;
+    flex-wrap:wrap;gap:20px;margin:20px 0;
   }
-  .ticket-table {
-    width: 75%;
-    border-collapse: collapse;
-    border-radius: 10px;
-    overflow: hidden;
-    box-shadow: 0 3px 12px rgba(123,47,247,0.1);
+  .chart-section img {
+    max-width:100%;border-radius:16px;
+    box-shadow:0 4px 12px rgba(0,0,0,0.2);
   }
-  .ticket-table th {
-    background: linear-gradient(90deg, #7b2ff7 0%, #f107a3 100%);
-    color: #fff;
-    text-align: center;
-    padding: 10px 14px;
-    font-size: 15px;
-    font-weight: 600;
-    letter-spacing: 0.3px;
-  }
-  .ticket-table td {
-    border: 1px solid #e0e0e0;
-    padding: 10px 14px;
-    font-size: 14px;
-  }
-
-  /* ===== Winnings Section ===== */
+  .legend-section {flex:1;min-width:220px;text-align:left;}
   .stats-box {
-    background: linear-gradient(145deg, #ffeb99, #d4af37);
-    color: #3d0066;
-    border-radius: 20px;
-    padding: 25px;
-    margin: 25px auto 30px;
-    width: 85%;
-    font-weight: 700;
-    font-size: 20px;
-    box-shadow: 0 3px 15px rgba(212,175,55,0.3);
-    line-height: 1.6;
+    background:linear-gradient(145deg,#ffeb99,#d4af37);
+    color:#3d0066;border-radius:20px;padding:25px;
+    margin:25px auto 30px;width:85%;font-weight:700;font-size:20px;
+    box-shadow:0 3px 15px rgba(212,175,55,0.3);
   }
-  .stats-box strong {
-    color: #000;
-    font-size: 22px;
-  }
-
-  /* ===== Super Prizes ===== */
   .super-prize-section {
-    background: linear-gradient(90deg, #7b2ff7 0%, #f107a3 100%);
-    color: #fff;
-    border-radius: 14px;
-    text-align: center;
-    margin-top: 40px;
-    padding: 25px 20px;
-    box-shadow: 0 3px 12px rgba(123,47,247,0.3);
+    background:linear-gradient(90deg,#7b2ff7 0%,#f107a3 100%);
+    color:#fff;border-radius:14px;text-align:center;
+    margin-top:40px;padding:25px 20px;
+    box-shadow:0 3px 12px rgba(123,47,247,0.3);
   }
-  .super-prize-title {
-    color: #FFD700;
-    font-size: 20px;
-    font-weight: 700;
-    letter-spacing: 0.8px;
-    margin-bottom: 16px;
-  }
-
-  /* ===== Footer ===== */
-  .footer {
-    background: #fafafa;
-    text-align: center;
-    padding: 22px;
-    font-size: 13px;
-    color: #777;
-    border-top: 1px solid #eee;
-  }
-  .social-icons img {
-    width: 22px;
-    margin: 0 6px;
-    opacity: 0.7;
-  }
-  .social-icons img:hover {
-    opacity: 1;
-  }
-
-  @media only screen and (max-width: 600px) {
-    .content { padding: 25px 20px; }
-    .ticket-table { width: 100%; }
-    .stats-box { width: 100%; font-size: 18px; }
-  }
+  .super-prize-title {color:#FFD700;font-size:20px;font-weight:700;margin-bottom:16px;}
+  .footer {background:#fafafa;text-align:center;padding:22px;font-size:13px;color:#777;border-top:1px solid #eee;}
 </style>
 </head>
 <body>
   <div class="container">
-    <div class="header">
-      <h1>🎉 Congratulations 🎉</h1>
-    </div>
-
+    <div class="header"><h1>🎉 Congratulations 🎉</h1></div>
     <div class="content">
-      <div class="tagline">⭐ Customer of the Week</div>
       <h2>Dear ${name || "Valued Customer"},</h2>
-      <p>We are delighted to recognize you as one of our most valued customer this week!</p>
+      <p>We are delighted to recognize you as one of our most valued customers this week!</p>
 
       <div class="highlight-box">
         You’ve purchased <strong>${
@@ -262,20 +231,15 @@ const generateEmailTemplate = (
         }</strong> total tickets this week
       </div>
 
-      <p style="margin-bottom:20px;">Here’s your detailed ticket summary:</p>
+      <p style="margin-bottom:10px;">Here’s your weekly ticket breakdown:</p>
 
-      <div class="table-wrapper">
-        <table class="ticket-table" align="center">
-          <thead>
-            <tr>
-              <th>Lottery Type</th>
-              <th>Tickets</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${ticketRows}
-          </tbody>
-        </table>
+      <div class="chart-wrapper">
+        <div class="chart-section">
+          <img src="${chartUrl}" alt="Ticket Summary Chart" />
+        </div>
+        <div class="legend-section">
+          ${rightLegend}
+        </div>
       </div>
 
       <div class="stats-box">
@@ -284,31 +248,85 @@ const generateEmailTemplate = (
         ).toLocaleString()}/=</strong>
       </div>
 
-      <p>
-        Keep your luck rolling — every ticket gives you another chance at amazing rewards!  
-        Don’t miss our <strong>Next Super Prizes</strong> below 🏆.
-      </p>
+      <!-- ✨ Motivational message -->
+      <div style="
+        border-radius:10px;
+        padding:18px 25px;
+        margin:25px auto;
+        width:85%;
+        color:#3d0066;
+        font-size:15px;
+        font-weight:500;
+        line-height:1.7;
+        box-shadow:0 2px 8px rgba(0,0,0,0.05);
+      ">
+        <p style="margin:0 0 10px 0;">
+          We are truly grateful for your continued trust and support.<br/>
+          We are honored to have you as part of the <strong>WIN WAY</strong> family.
+        </p>
+        <p style="margin:0;font-weight:600;color:#7b2ff7;">
+          Don’t stop now
+        </p>
+        <p style="margin:0;font-weight:600;color:#7b2ff7;">
+          Keep the momentum going and claim your next big win..!
+         
+        </p>
+      </div>
 
+      <!-- 🏆 Super Prize Section -->
       <div class="super-prize-section">
         <div class="super-prize-title">🏆 NEXT SUPER PRIZES 🏆</div>
         <table role="presentation" align="center" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:600px;">
           <tr>${prizeRows}</tr>
         </table>
+
+        <!-- 🔘 Buy Now Button -->
+       <!-- 🔘 Buy Now Button -->
+<a href="https://www.winway.lk/"
+   target="_blank"
+   style="
+     display: inline-flex;
+     align-items: center;
+     justify-content: center;
+     background: linear-gradient(90deg, #7b2ff7 0%, #d4af37 100%);
+     color: #fff;
+     text-decoration: none;
+     font-weight: 700;
+     font-size: 14px;
+     padding: 12px 32px;
+     border-radius: 30px;
+     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+     transition: all 0.3s ease;
+     white-space: nowrap;
+     cursor: pointer;
+     margin-top: 25px;
+     letter-spacing: 0.3px;
+   "
+   onmouseover="this.style.opacity='0.9'; this.style.transform='scale(1.05)';"
+   onmouseout="this.style.opacity='1'; this.style.transform='scale(1)';">
+   Buy&nbsp;Now
+</a>
+
+<!-- ✅ Responsive scaling for mobile -->
+<style>
+@media only screen and (max-width: 480px) {
+  a[href="https://www.winway.lk/"] {
+    font-size: 13px !important;
+    padding: 10px 26px !important;
+    border-radius: 25px !important;
+  }
+}
+</style>
+
       </div>
 
       <p style="margin-top:30px;">
         Warm regards,<br/>
-        <strong>The WinWay Loyalty Team</strong><br/>
+        <strong>The WinWay Team</strong><br/>
         <span style="font-size:13px;color:#777;">📞 0707884884 | 0722884884</span>
       </p>
     </div>
-
     <div class="footer">
-      <div class="social-icons">
-        <img src="https://cdn-icons-png.flaticon.com/512/733/733547.png" alt="Facebook" />
-        <img src="https://cdn-icons-png.flaticon.com/512/2111/2111463.png" alt="Instagram" />
-        <img src="https://cdn-icons-png.flaticon.com/512/733/733579.png" alt="Twitter" />
-      </div>
       <p>© ${new Date().getFullYear()} WinWay (Pvt) Ltd. All rights reserved.</p>
     </div>
   </div>
@@ -367,8 +385,9 @@ async function sendEmail(req, res, useTemplate = false) {
       attachments,
     };
 
-    const transporter = createTransporter();
-    const info = await transporter.sendMail(mailOptions);
+    const transporter = await createTransporter(); // ✅ must await here
+await transporter.sendMail(mailOptions);
+
 
     res.json({ success: true, message: "✅ Email sent successfully!" });
   } catch (err) {
