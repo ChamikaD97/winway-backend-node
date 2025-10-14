@@ -52,7 +52,7 @@ const generateEmailTemplate = (
   const labels = sortedTbl.map((t) => t.name);
   const values = sortedTbl.map((t) => Number(t.count) || 0);
 
-  // ✅ Color palette (shared between chart and legend)
+  // ✅ Shared colors
   const colors = [
     "#7b2ff7",
     "#d4af37",
@@ -66,7 +66,7 @@ const generateEmailTemplate = (
     "#cddc39",
   ];
 
-  // ✅ Chart config (no legend, clean layout)
+  // ✅ Chart config (NO labels inside chart)
   const chartConfig = {
     type: "pie",
     data: {
@@ -83,253 +83,232 @@ const generateEmailTemplate = (
     options: {
       plugins: {
         legend: { display: false },
-        title: { display: false },
         datalabels: { display: false },
+        tooltip: { enabled: false },
       },
-      layout: { padding: 15 },
       animation: { animateRotate: true, animateScale: true },
+      layout: { padding: 15 },
     },
   };
 
-  // ✅ Chart image URL (smaller)
+  // ✅ QuickChart image URL
   const chartUrl = `https://quickchart.io/chart?c=${encodeURIComponent(
     JSON.stringify(chartConfig)
   )}&backgroundColor=white&width=250&height=250&format=png`;
 
-  // ✅ Right-side legend (color left border)
+  // ✅ Legend (values on right only)
   const rightLegend = labels
     .map(
       (label, i) => `
-      <div style="
-        display:flex;
-        align-items:center;
-        justify-content:space-between;
-        background:${i % 2 === 0 ? "#fdfaff" : "#ffffff"};
-        border-left:8px solid ${colors[i % colors.length]};
-        border-radius:8px;
-        margin-bottom:8px;
-        padding:10px 16px;
-        box-shadow:0 2px 6px rgba(0,0,0,0.06);
-        font-weight:600;
-        color:#222;
-      ">
-        <div style="
-          flex:1;
-          text-align:left;
-          font-size:14px;
-          letter-spacing:0.2px;
-        ">
-          ${label}
-        </div>
-        <div style="
-          text-align:right;
-          font-size:14px;
-          font-weight:700;
-          color:#444;
-          min-width:40px;
-        ">
-          ${values[i]}
-        </div>
-      </div>
-    `
+        <tr>
+          <td style="border-left:6px solid ${colors[i % colors.length]};
+                     padding:6px 10px;
+                     font-family:Arial, sans-serif;
+                     font-size:14px;
+                     color:#333;">
+            ${label}
+          </td>
+          <td align="right"
+              style="padding:6px 10px;
+                     font-family:Arial, sans-serif;
+                     font-size:14px;
+                     font-weight:bold;
+                     color:#555;">
+            ${values[i]}
+          </td>
+        </tr>`
     )
     .join("");
 
-  // ✅ Super prize rows
+  // ✅ Super prize section
   const prizeRows =
     superPrizes && Object.keys(superPrizes).length
       ? Object.entries(superPrizes)
           .map(
-            ([name, value], index) => `
-        <td align="center" valign="top"
-          style="background:rgba(255,255,255,0.15);
-                 border:1px solid rgba(255,255,255,0.25);
-                 border-radius:10px;
-                 color:#fff;
-                 width:45%;
-                 padding:14px;
-                 margin:8px;">
-          <div style="font-size:15px;font-weight:200;margin-bottom:4px;">${name}</div>
-          <div style="font-size:16px;font-weight:200;color:#FFD700;">Rs. ${Number(
-            value
-          ).toLocaleString()}</div>
-        </td>
-        ${(index + 1) % 2 === 0 ? "</tr><tr>" : ""}`
+            ([name, value], i) => `
+              <td width="48%" valign="top" align="center"
+                  style="background:rgba(255,255,255,0.1);
+                         border:1px solid rgba(255,255,255,0.25);
+                         border-radius:8px;
+                         color:#fff;
+                         padding:12px;
+                         margin:6px;
+                         font-family:Arial, sans-serif;">
+                <div style="font-size:15px;">${name}</div>
+                <div style="font-size:16px;font-weight:bold;color:#FFD700;">
+                  Rs. ${Number(value).toLocaleString()}
+                </div>
+              </td>${(i + 1) % 2 === 0 ? "</tr><tr>" : ""}`
           )
           .join("")
       : `<p style="color:#fff;font-size:14px;">No super prizes available this week.</p>`;
 
-  // ✅ Full Email Template
+  const year = new Date().getFullYear();
+
+  // ✅ Final HTML
   return `
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8" />
-<title>WinWay Weekly Update</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<style>
-  body {
-    font-family:'Segoe UI',Roboto,Arial,sans-serif;
-    background-color:#f4f3f9;
-    margin:0;padding:0;
-  }
-  .container {
-    max-width:700px;margin:40px auto;
-    background:#fff;border-radius:18px;overflow:hidden;
-    box-shadow:0 6px 25px rgba(123,47,247,0.15),0 0 12px rgba(212,175,55,0.25);
-    border:3px solid transparent;
-    background-image:linear-gradient(#fff,#fff),linear-gradient(135deg,#7b2ff7,#d4af37);
-    background-origin:border-box;background-clip:content-box,border-box;
-  }
-  .header {
-    background:linear-gradient(135deg,#7b2ff7 0%,#f107a3 100%);
-    color:#fff;text-align:center;padding:45px 20px 35px;
-  }
-  .header h1 {font-size:30px;margin:0;text-transform:uppercase;font-weight:800;}
-  .content {padding:35px 40px;color:#333;line-height:1.7;text-align:center;}
-  .highlight-box {
-    background:linear-gradient(90deg,#7b2ff7 0%,#d4af37 100%);
-    color:white;font-size:18px;font-weight:600;
-    padding:14px 24px;border-radius:40px;display:inline-block;
-    box-shadow:0 3px 12px rgba(123,47,247,0.25);margin-bottom:20px;
-  }
-  .chart-wrapper {
-    display:flex;justify-content:center;align-items:center;
-    flex-wrap:wrap;gap:20px;margin:20px 0;
-  }
-  .chart-section img {
-    max-width:100%;border-radius:16px;
-    box-shadow:0 4px 12px rgba(0,0,0,0.2);
-  }
-  .legend-section {flex:1;min-width:220px;text-align:left;}
-  .stats-box {
-    background:linear-gradient(145deg,#ffeb99,#d4af37);
-    color:#3d0066;border-radius:20px;padding:25px;
-    margin:25px auto 30px;width:85%;font-weight:700;font-size:20px;
-    box-shadow:0 3px 15px rgba(212,175,55,0.3);
-  }
-  .super-prize-section {
-    background:linear-gradient(90deg,#7b2ff7 0%,#f107a3 100%);
-    color:#fff;border-radius:14px;text-align:center;
-    margin-top:40px;padding:25px 20px;
-    box-shadow:0 3px 12px rgba(123,47,247,0.3);
-  }
-  .super-prize-title {color:#FFD700;font-size:20px;font-weight:700;margin-bottom:16px;}
-  .footer {background:#fafafa;text-align:center;padding:22px;font-size:13px;color:#777;border-top:1px solid #eee;}
-</style>
+<meta name="viewport" content="width=device-width" />
 </head>
-<body>
-  <div class="container">
-    <div class="header"><h1>🎉 Congratulations 🎉</h1></div>
-    <div class="content">
-      <h2>Dear ${name || "Valued Customer"},</h2>
-      <p>We are delighted to recognize you as one of our most valued customers this week!</p>
+<body style="margin:0;padding:0;background:#f4f3f9;font-family:Arial, sans-serif;">
+  <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
+    <tr>
+      <td align="center" style="padding:30px 0;">
+        <table role="presentation" width="700" border="0" cellspacing="0" cellpadding="0"
+               style="background:#ffffff;border-radius:18px;overflow:hidden;
+                      box-shadow:0 6px 25px rgba(123,47,247,0.15);
+                      border:3px solid #7b2ff7;">
+          
+          <!-- ===== Header (Gradient with VML for Outlook) ===== -->
+          <tr>
+            <td align="center" style="padding:0;">
+              <!--[if gte mso 9]>
+              <v:rect xmlns:v="urn:schemas-microsoft-com:vml" fill="true" stroke="false"
+                      style="width:700px;height:120px;">
+                <v:fill type="gradient" color="#7b2ff7" color2="#f107a3" angle="135" />
+                <v:textbox inset="0,0,0,0">
+              <![endif]-->
+              <div style="background:linear-gradient(135deg,#7b2ff7,#f107a3);
+                          border-radius:18px 18px 0 0;
+                          padding:35px 20px 25px;">
+                <h1 style="color:#fff;font-size:30px;margin:0;text-transform:uppercase;font-weight:800;">
+                  🎉 CONGRATULATIONS 🎉
+                </h1>
+              </div>
+              <!--[if gte mso 9]>
+                </v:textbox>
+              </v:rect>
+              <![endif]-->
+            </td>
+          </tr>
 
-      <div class="highlight-box">
-        You’ve purchased <strong>${
-          tickets || 0
-        }</strong> total tickets this week
-      </div>
+          <!-- ===== Main Content ===== -->
+          <tr>
+            <td align="center" style="padding:35px 40px 20px;color:#333;line-height:1.6;">
+              <h2 style="margin:0;font-weight:bold;">Dear ${
+                name || "Valued Customer"
+              },</h2>
+              <p style="margin:10px 0 20px;">
+                We are delighted to recognize you as one of our most valued customers this week!
+              </p>
 
-      <p style="margin-bottom:10px;">Here’s your weekly ticket breakdown:</p>
+              <!-- Highlight -->
+              <div style="background:linear-gradient(90deg,#7b2ff7 0%,#d4af37 100%);
+                          color:#fff;font-size:18px;font-weight:600;
+                          padding:14px 24px;border-radius:40px;
+                          display:inline-block;margin-bottom:25px;">
+                You’ve purchased <strong>${
+                  tickets || 0
+                }</strong> total tickets this week
+              </div>
 
-      <div class="chart-wrapper">
-        <div class="chart-section">
-          <img src="${chartUrl}" alt="Ticket Summary Chart" />
-        </div>
-        <div class="legend-section">
-          ${rightLegend}
-        </div>
-      </div>
+              <p>Here’s your weekly ticket breakdown:</p>
+            </td>
+          </tr>
 
-      <div class="stats-box">
-        This week alone, you have won <strong>Rs. ${Number(
-          winnings || 0
-        ).toLocaleString()}/=</strong>
-      </div>
+          <!-- ===== Chart + Legend ===== -->
+          <tr>
+            <td align="center" style="padding:0 30px 20px;">
+              <table role="presentation" width="90%" border="0" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td align="center" width="50%">
+                    <img src="${chartUrl}" width="250" height="250"
+                         style="border-radius:12px;display:block;border:0;"
+                         alt="Ticket Chart" />
+                  </td>
+                  <td width="50%" valign="top">
+                    <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
+                      ${rightLegend}
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
 
-      <!-- ✨ Motivational message -->
-      <div style="
-        border-radius:10px;
-        padding:18px 25px;
-        margin:25px auto;
-        width:85%;
-        color:#3d0066;
-        font-size:15px;
-        font-weight:500;
-        line-height:1.7;
-        box-shadow:0 2px 8px rgba(0,0,0,0.05);
-      ">
-        <p style="margin:0 0 10px 0;">
-          We are truly grateful for your continued trust and support.<br/>
-          We are honored to have you as part of the <strong>WIN WAY</strong> family.
-        </p>
-        <p style="margin:0;font-weight:600;color:#7b2ff7;">
-          Don’t stop now
-        </p>
-        <p style="margin:0;font-weight:600;color:#7b2ff7;">
-          Keep the momentum going and claim your next big win..!
-         
-        </p>
-      </div>
+          <!-- ===== Winnings Box ===== -->
+          <tr>
+            <td align="center" style="padding:25px;">
+              <div style="background:linear-gradient(145deg,#ffeb99,#d4af37);
+                          color:#3d0066;border-radius:20px;
+                          padding:25px;width:85%;font-weight:700;font-size:20px;">
+                This week alone, you have won <strong>Rs. ${Number(
+                  winnings || 0
+                ).toLocaleString()}/=</strong>
+              </div>
+            </td>
+          </tr>
 
-      <!-- 🏆 Super Prize Section -->
-      <div class="super-prize-section">
-        <div class="super-prize-title">🏆 NEXT SUPER PRIZES 🏆</div>
-        <table role="presentation" align="center" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:600px;">
-          <tr>${prizeRows}</tr>
+          <!-- ===== Motivational Text ===== -->
+          <tr>
+            <td align="center" style="padding:20px 40px 10px;">
+              <div style="border-radius:10px;padding:18px 25px;width:85%;
+                          color:#3d0066;font-size:15px;font-weight:500;
+                          line-height:1.7;background:#f9f7ff;">
+                <p style="margin:0 0 10px;">
+                  We are truly grateful for your continued trust and support.<br/>
+                  We are honored to have you as part of the <strong>WIN WAY</strong> family.
+                </p>
+                <p style="margin:0;font-weight:600;color:#7b2ff7;">
+                  Don’t stop now – keep the momentum going and claim your next big win..!
+                </p>
+              </div>
+            </td>
+          </tr>
+
+          <!-- ===== Super Prize Section ===== -->
+          <tr>
+            <td align="center" style="padding:30px 20px;">
+              <!--[if gte mso 9]>
+              <v:rect xmlns:v="urn:schemas-microsoft-com:vml" fill="true" stroke="false"
+                      style="width:700px;height:auto;">
+                <v:fill type="gradient" color="#7b2ff7" color2="#f107a3" angle="90"/>
+                <v:textbox inset="0,0,0,0">
+              <![endif]-->
+              <div style="background:linear-gradient(90deg,#7b2ff7,#f107a3);
+                          border-radius:14px;text-align:center;color:#fff;padding:25px 20px;">
+                <div style="color:#FFD700;font-size:20px;font-weight:700;margin-bottom:16px;">
+                  🏆 NEXT SUPER PRIZES 🏆
+                </div>
+                <table role="presentation" align="center" cellpadding="0" cellspacing="0" border="0" width="90%">
+                  <tr>${prizeRows}</tr>
+                </table>
+
+                <a href="https://www.winway.lk/" target="_blank"
+                   style="display:inline-block;
+                          background:linear-gradient(90deg,#7b2ff7 0%,#d4af37 100%);
+                          color:#fff;text-decoration:none;
+                          font-weight:700;font-size:14px;
+                          padding:12px 32px;border-radius:30px;
+                          margin-top:25px;letter-spacing:0.3px;">
+                  Buy&nbsp;Now
+                </a>
+              </div>
+              <!--[if gte mso 9]>
+                </v:textbox>
+              </v:rect>
+              <![endif]-->
+            </td>
+          </tr>
+
+          <!-- ===== Footer ===== -->
+          <tr>
+            <td align="center"
+                style="background:#fafafa;text-align:center;
+                       padding:22px;font-size:13px;color:#777;
+                       border-top:1px solid #eee;">
+              © ${year} WinWay (Pvt) Ltd. All rights reserved.<br/>
+              📞 0707884884 | 0722884884
+            </td>
+          </tr>
+
         </table>
-
-        <!-- 🔘 Buy Now Button -->
-       <!-- 🔘 Buy Now Button -->
-<a href="https://www.winway.lk/"
-   target="_blank"
-   style="
-     display: inline-flex;
-     align-items: center;
-     justify-content: center;
-     background: linear-gradient(90deg, #7b2ff7 0%, #d4af37 100%);
-     color: #fff;
-     text-decoration: none;
-     font-weight: 700;
-     font-size: 14px;
-     padding: 12px 32px;
-     border-radius: 30px;
-     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
-     transition: all 0.3s ease;
-     white-space: nowrap;
-     cursor: pointer;
-     margin-top: 25px;
-     letter-spacing: 0.3px;
-   "
-   onmouseover="this.style.opacity='0.9'; this.style.transform='scale(1.05)';"
-   onmouseout="this.style.opacity='1'; this.style.transform='scale(1)';">
-   Buy&nbsp;Now
-</a>
-
-<!-- ✅ Responsive scaling for mobile -->
-<style>
-@media only screen and (max-width: 480px) {
-  a[href="https://www.winway.lk/"] {
-    font-size: 13px !important;
-    padding: 10px 26px !important;
-    border-radius: 25px !important;
-  }
-}
-</style>
-
-      </div>
-
-      <p style="margin-top:30px;">
-        Warm regards,<br/>
-        <strong>The WinWay Team</strong><br/>
-        <span style="font-size:13px;color:#777;">📞 0707884884 | 0722884884</span>
-      </p>
-    </div>
-    <div class="footer">
-      <p>© ${new Date().getFullYear()} WinWay (Pvt) Ltd. All rights reserved.</p>
-    </div>
-  </div>
+      </td>
+    </tr>
+  </table>
 </body>
 </html>
 `;
@@ -386,8 +365,7 @@ async function sendEmail(req, res, useTemplate = false) {
     };
 
     const transporter = await createTransporter(); // ✅ must await here
-await transporter.sendMail(mailOptions);
-
+    await transporter.sendMail(mailOptions);
 
     res.json({ success: true, message: "✅ Email sent successfully!" });
   } catch (err) {
