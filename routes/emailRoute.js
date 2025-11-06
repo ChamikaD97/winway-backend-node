@@ -399,7 +399,7 @@ const genarateImageTemplate = (
           margin-bottom:6px;
           background:linear-gradient(90deg, ${colors[i % colors.length]} 0%, ${
         colors[i % colors.length]
-      }40 10%, rgba(255,255,255,0) 70%);
+      }40 10%, rgba(255,255,255,0) 90%);
           border-radius:8px;">
           <table width="100%" border="0" cellspacing="0" cellpadding="0">
             <tr>
