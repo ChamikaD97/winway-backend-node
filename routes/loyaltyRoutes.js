@@ -15,25 +15,42 @@ router.delete("/delete-all", (req, res) => {
       });
     }
 
-    // Delete in dependency-safe order
-    db.prepare("DELETE FROM loyalty_history").run();
-    db.prepare("DELETE FROM lottery_breakdown").run();
+    // Only clear data — do not remove tables
+    const tables = [
+      "customers",
+      "customers_last_month",
+      "lottery_breakdown_overoll",
+      "lottery_breakdowns_last_month",
+      "customer_tiers",
+    ];
 
-    db.prepare("DELETE FROM lottery_breakdown").run();
-    db.prepare("DELETE FROM customers").run();
-
-    res.json({
-      success: true,
-      message:
-        "🧹 All customer, loyalty, and breakdown data deleted successfully.",
+    // Wrap in a transaction for consistency
+    db.serialize(() => {
+      db.run("BEGIN TRANSACTION");
+      tables.forEach((table) => {
+        db.run(`DELETE FROM ${table}`, function (err) {
+          if (err) {
+            console.error(`❌ Error clearing ${table}:`, err.message);
+          } else {
+            console.log(`🗑 Cleared all rows from table: ${table}`);
+          }
+        });
+      });
+      db.run("COMMIT");
     });
 
-    console.log("⚠️ All loyalty data wiped clean by admin request");
+    res.status(200).json({
+      success: true,
+      message: "🧹 All table data deleted successfully (tables remain intact).",
+    });
+
+    console.log("⚠️ All table data wiped clean by admin request");
   } catch (err) {
-    console.error("❌ Error deleting all loyalty data:", err);
+    console.error("❌ Error deleting data:", err);
     res.status(500).json({
       success: false,
-      message: "Server error while deleting all loyalty data",
+      message: "Server error while deleting data",
+      error: err.message,
     });
   }
 });
@@ -54,8 +71,6 @@ router.post("/save", (req, res) => {
       `SELECT * FROM customers WHERE MobileNumber = ?`
     );
 
-    
-
     const insertBreakdown = db.prepare(`
       INSERT INTO lottery_breakdown (MobileNumber, Last_Purchase_Time, Lottery_Name, Ticket_Count)
       VALUES (?, ?, ?, ?)
@@ -75,8 +90,6 @@ router.post("/save", (req, res) => {
       const oldValue = existing ? existing.Ticket_Count : 0;
       const newValue = c.Ticket_Count || 0;
       const newTier = c.New_Tier;
-
-      console.log(c.Loyalty_Tier);
 
       insertCustomer.run(
         c.MobileNumber,
@@ -170,7 +183,6 @@ router.post("/loyalty_history_save", (req, res) => {
       const existing = findCustomer.get(c.MobileNumber);
       const oldTier = existing ? existing.Loyalty_Tier : "N/A";
       const newTier = c.Loyalty_Tier || "Blue";
-      console.log(oldTier,"-> ",existing.Ticket_Count,"-> ",newTier);
 
       insertCustomer.run(
         c.MobileNumber,
@@ -307,5 +319,12 @@ router.get("/lottery_breakdown", (req, res) => {
       .json({ success: false, message: "Failed to load breakdown" });
   }
 });
+
+
+
+
+
+
+
 
 export default router;
