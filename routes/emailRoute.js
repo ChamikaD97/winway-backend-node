@@ -102,58 +102,75 @@ const generateEmailTemplate = (
   ];
 
   const chartConfig = {
-    type: "pie",
+    type: "bar",
     data: {
+      labels,
       datasets: [
         {
+          label: "Tickets Purchased",
           data: values,
-          backgroundColor: colors,
-          borderColor: "#fff",
-          borderWidth: 2,
-          offset: 4,
+          backgroundColor: colors.slice(0, 7),
+          borderRadius: 8,
         },
       ],
     },
     options: {
+      indexAxis: "y", // ✅ horizontal direction (bars left → right)
       plugins: {
         legend: { display: false },
+        tooltip: {
+          enabled: true,
+          callbacks: { label: (ctx) => `${ctx.raw} tickets` },
+        },
         datalabels: { display: false },
-        tooltip: { enabled: false },
       },
-      animation: { animateRotate: true, animateScale: true },
-      layout: { padding: 15 },
+      scales: {
+        x: {
+          beginAtZero: true,
+          grid: { color: "#eee" },
+          ticks: { color: "#333", font: { size: 12 } },
+          title: {
+            display: true,
+            text: "Number of Tickets",
+            color: "#555",
+            font: { size: 13, weight: "bold" },
+          },
+        },
+        y: {
+          grid: { display: false },
+          ticks: {
+            color: "#222",
+            font: { size: 13, weight: "bold" },
+          },
+        },
+      },
     },
   };
+
+  // const chartConfig = {
+  //   type: "bar",
+  //   data: {
+  //     labels,
+
+  //   },
+  //   options: {
+  //     plugins: {
+  //       legend: { display: false },
+  //       tooltip: { enabled: true },
+  //     },
+  //     scales: {
+  //       x: { ticks: { color: "#444", font: { size: 12 } } },
+  //       y: {
+  //         ticks: { color: "#444", font: { size: 12 } },
+  //         grid: { color: "#eee" },
+  //       },
+  //     },
+  //   },
+  // };
 
   const chartUrl = `https://quickchart.io/chart?c=${encodeURIComponent(
     JSON.stringify(chartConfig)
   )}&backgroundColor=white&width=250&height=250&format=png`;
-
-  const rightLegend = labels
-    .map(
-      (label, i) => `
-      <tr>
-        <td colspan="2" style="
-          padding:8px 12px;
-          margin-bottom:6px;
-          background:linear-gradient(90deg, ${colors[i % colors.length]} 0%, ${
-        colors[i % colors.length]
-      }40 10%, rgba(255,255,255,0) 70%);
-          border-radius:8px;">
-          <table width="100%" border="0" cellspacing="0" cellpadding="0">
-            <tr>
-              <td style="font-family:Arial,sans-serif;font-size:14px;color:#222;font-weight:300;text-align:left;">
-                ${label}
-              </td>
-              <td style="font-family:Arial,sans-serif;font-size:14px;font-weight:500;color:#444;text-align:right;">
-                ${values[i]}
-              </td>
-            </tr>
-          </table>
-        </td>
-      </tr>`
-    )
-    .join("");
 
   // ✅ Prizes sorted by highest value
   const sortedPrizes = Object.entries(superPrizes || {}).sort(
@@ -235,7 +252,7 @@ const generateEmailTemplate = (
 
           <!-- Main Body -->
           <tr>
-            <td align="center" style="padding:35px 40px;color:#333;">
+           <td align="center" style="padding: 35px 40px 2px 40px ;color:#333;">
               <h2 style="margin:0;font-weight:600;">${
                 name || "Valued Customer"
               }</h2>
@@ -259,18 +276,75 @@ const generateEmailTemplate = (
           <!-- Chart + Legend -->
           <tr>
             <td align="center" style="padding:0 30px 20px;">
-              <table width="90%" style="margin:auto;border:2px solid #e0d7ff;border-radius:14px;">
-                <tr>
-                  <td align="center" width="55%" style="padding:16px;">
-                    <img src="${chartUrl}" width="280" height="280" style="border-radius:12px;">
-                  </td>
-                  <td width="50%" valign="top">
-                    <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
-                      ${rightLegend}
-                    </table>
-                  </td>
-                </tr>
-              </table>
+    <table role="presentation" width="90%" border="0" cellspacing="0" cellpadding="0"
+       style="margin:auto;border:2px solid #e0d7ff;border-radius:14px;background:#fff;
+              box-shadow:0 3px 10px rgba(123,47,247,0.08);padding:15px;font-family:Arial,sans-serif;">
+
+  <!-- 🏷️ Table Header Row -->
+  <thead>
+    <tr>
+      <th align="left" width="35%"
+          style="font-size:13px; color:#000;font-weight:700;padding:8px 10px;border-bottom:1px solid #ffffffff;">
+        Lottery
+      </th>
+      <th align="center" width="55%"
+          style="font-size:13px;color:#000;font-weight:700;padding:8px 10px;border-bottom:1px solid #ffffffff;">
+        
+      </th>
+      <th align="right" width="10%"
+          style="font-size:13px;color:#000;font-weight:700;padding:8px 10px;border-bottom:1px solid #ffffffff;">
+        Tickets
+      </th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <!-- 🔹 Dynamic Rows -->
+    ${sortedTbl
+      .map((t, i) => {
+        const colors = [
+          "#7b2ff7",
+          "#f107a3",
+          "#ff9800",
+          "#4caf50",
+          "#03a9f4",
+          "#e91e63",
+          "#9c27b0",
+          "#cddc39",
+        ];
+        const color = colors[i % colors.length];
+        const max = Math.max(...tblData.map((x) => Number(x.count) || 0));
+        const widthPct = Math.round(((Number(t.count) || 0) / max) * 100);
+
+        return `
+        <tr>
+          <!-- 🎫 Lottery Name -->
+          <td align="left" width="35%"
+              style="font-size:15px;color:#333;font-weight:500;padding:6px 10px;">
+            ${t.name}
+          </td>
+
+          <!-- 📊 Progress Bar -->
+          <td width="55%" style="padding:6px 10px;">
+            <div style="background:${color};
+                        width:${widthPct}%;
+                        height:18px;
+                        border-radius:10px;
+                        transition:width 0.3s;"></div>
+          </td>
+
+          <!-- 🔢 Ticket Count -->
+          <td align="right" width="10%"
+              style="font-size:15px;font-weight:600;color:#111;padding-right:10px;">
+            ${Number(t.count).toLocaleString()}
+          </td>
+        </tr>`;
+      })
+      .join("")}
+  </tbody>
+</table>
+
+
             </td>
           </tr>
 
@@ -325,6 +399,7 @@ const generateEmailTemplate = (
 </body>
 </html>`;
 };
+
 const genarateImageTemplate = (
   name,
   tickets,
@@ -389,32 +464,6 @@ const genarateImageTemplate = (
   const chartUrl = `https://quickchart.io/chart?c=${encodeURIComponent(
     JSON.stringify(chartConfig)
   )}&backgroundColor=white&width=250&height=250&format=png`;
-
-  const rightLegend = labels
-    .map(
-      (label, i) => `
-      <tr>
-        <td colspan="2" style="
-          padding:8px 12px;
-          margin-bottom:6px;
-          background:linear-gradient(90deg, ${colors[i % colors.length]} 0%, ${
-        colors[i % colors.length]
-      }40 10%, rgba(255,255,255,0) 90%);
-          border-radius:8px;">
-          <table width="100%" border="0" cellspacing="0" cellpadding="0">
-            <tr>
-              <td style="font-family:Arial,sans-serif;font-size:14px;color:#222;font-weight:300;text-align:left;">
-                ${label}
-              </td>
-              <td style="font-family:Arial,sans-serif;font-size:14px;font-weight:500;color:#444;text-align:right;">
-                ${values[i]}
-              </td>
-            </tr>
-          </table>
-        </td>
-      </tr>`
-    )
-    .join("");
 
   // ✅ Prizes sorted by highest value
   const sortedPrizes = Object.entries(superPrizes || {}).sort(
@@ -491,10 +540,9 @@ const genarateImageTemplate = (
               </div>
             </td>
           </tr>
-
           <!-- Main Body -->
           <tr>
-            <td align="center" style="padding:35px 40px;color:#333;">
+            <td align="center" style="padding: 35px 40px 2px 40px ;color:#333;">
               <h2 style="margin:0;font-weight:600;">${
                 name || "Valued Customer"
               }</h2>
@@ -518,20 +566,73 @@ const genarateImageTemplate = (
           <!-- Chart + Legend -->
           <tr>
             <td align="center" style="padding:0 30px 20px;">
-              <table width="90%" style="margin:auto;border:2px solid #e0d7ff;border-radius:14px;">
-                <tr>
-                  <td align="center" width="55%" style="padding:16px;">
-                    <img src="${chartUrl}" width="280" height="280" style="border-radius:12px;">
-                  </td>
-                  <td width="50%" valign="top">
-                    <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
-                      ${rightLegend}
-                    </table>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
+    <table role="presentation" width="90%" border="0" cellspacing="0" cellpadding="0"
+       style="margin:auto;border:2px solid #e0d7ff;border-radius:14px;background:#fff;
+              box-shadow:0 3px 10px rgba(123,47,247,0.08);padding:15px;font-family:Arial,sans-serif;">
+
+  <!-- 🏷️ Table Header Row -->
+  <thead>
+    <tr>
+      <th align="left" width="35%"
+          style="font-size:13px; color:#000;font-weight:700;padding:8px 10px;border-bottom:1px solid #ffffffff;">
+        Lottery
+      </th>
+      <th align="center" width="55%"
+          style="font-size:13px;color:#000;font-weight:700;padding:8px 10px;border-bottom:1px solid #ffffffff;">
+        
+      </th>
+      <th align="right" width="10%"
+          style="font-size:13px;color:#000;font-weight:700;padding:8px 10px;border-bottom:1px solid #ffffffff;">
+        Tickets
+      </th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <!-- 🔹 Dynamic Rows -->
+    ${sortedTbl
+      .map((t, i) => {
+        const colors = [
+          "#7b2ff7",
+          "#f107a3",
+          "#ff9800",
+          "#4caf50",
+          "#03a9f4",
+          "#e91e63",
+          "#9c27b0",
+          "#cddc39",
+        ];
+        const color = colors[i % colors.length];
+        const max = Math.max(...tblData.map((x) => Number(x.count) || 0));
+        const widthPct = Math.round(((Number(t.count) || 0) / max) * 100);
+
+        return `
+        <tr>
+          <!-- 🎫 Lottery Name -->
+          <td align="left" width="35%"
+              style="font-size:15px;color:#333;font-weight:500;padding:6px 10px;">
+            ${t.name}
+          </td>
+
+          <!-- 📊 Progress Bar -->
+          <td width="55%" style="padding:6px 10px;">
+            <div style="background:${color};
+                        width:${widthPct}%;
+                        height:18px;
+                        border-radius:10px;
+                        transition:width 0.3s;"></div>
+          </td>
+
+          <!-- 🔢 Ticket Count -->
+          <td align="right" width="10%"
+              style="font-size:15px;font-weight:600;color:#111;padding-right:10px;">
+            ${Number(t.count).toLocaleString()}
+          </td>
+        </tr>`;
+      })
+      .join("")}
+  </tbody>
+</table>
 
           <!-- Winnings -->
           <tr>
@@ -635,6 +736,8 @@ async function sendEmail(req, res, useTemplate = false) {
     );
 
     // 🧩 If no email, generate an image instead
+    console.log(to);
+
     if (!to || to.trim() === "") {
       const fileName = `${name.replace(/\s+/g, "_")}_${Date.now()}.png`;
       const outputPath = path.join(imageDir, fileName);
