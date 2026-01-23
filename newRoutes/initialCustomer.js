@@ -3,14 +3,20 @@ import db from "../models/winwayNew.js"; // path to your SQLite db.js
 
 const router = express.Router();
 
-/**
- * POST /api/initialCustomer
- * Saves initial customer data into:
- *   1️⃣ Current_Customer_Details
- *   2️⃣ Initial_Ticket_Breakdown_Details
- */
 router.post("/", async (req, res) => {
-  const { customers, Last_Update, current_count } = req.body;
+  const {
+    customers,
+    Last_Update,
+    current_count,
+    Last_Update_Summery,
+    New_Customers,
+  } = req.body;
+  console.log(
+    customers.length,
+    Last_Update,
+    Last_Update_Summery,
+    New_Customers,
+  );
 
   if (!Array.isArray(customers) || customers.length === 0) {
     return res
@@ -43,6 +49,21 @@ INSERT OR REPLACE INTO Current_Customer_Details (
 
           ) VALUES (?, ?, ? , ?)
         `;
+  const updateSummarySql = `
+  UPDATE Monthly_Upgrades_Summery
+  SET New_Customers = ?
+  WHERE Evaluation = ?
+`;
+
+  const insertSummarySql = `
+  INSERT INTO Monthly_Upgrades_Summery (
+    Evaluation,
+    Upgrades,
+    Downgrades,
+    Same,
+    New_Customers
+  ) VALUES (?, ?, ?, ?, ?)
+`;
 
   try {
     db.serialize(() => {
@@ -66,7 +87,7 @@ INSERT OR REPLACE INTO Current_Customer_Details (
         } = cust;
 
         const Loyalty_Number = `0884  2025  0000  ${String(
-          current_count + i
+          current_count + i,
         ).padStart(4, "0")}`;
 
         db.run(insertCustomerSQL, [
@@ -98,6 +119,46 @@ INSERT OR REPLACE INTO Current_Customer_Details (
         ]);
       });
 
+      if (New_Customers && Last_Update_Summery) {
+        // ✅ UPDATE existing month summary
+        db.run(
+          updateSummarySql,
+          [New_Customers, Last_Update_Summery],
+          (err) => {
+            if (err) {
+              console.error("❌ Summary update failed:", err.message);
+              db.run("ROLLBACK");
+              return res.status(500).json({
+                success: false,
+                message: "Failed to update monthly summary",
+              });
+            }
+          },
+        );
+      } else {
+        // ✅ INSERT new month summary
+        db.run(
+          insertSummarySql,
+          [
+            "First Evaluation", // Evaluation (ex: 2025_December)
+            0, // Upgrades
+            0, // Downgrades
+            0, // Same
+            customers.length || 0, // New_Customers
+          ],
+          (err) => {
+            if (err) {
+              console.error("❌ Summary insert failed:", err.message);
+              db.run("ROLLBACK");
+              return res.status(500).json({
+                success: false,
+                message: "Failed to insert monthly summary",
+              });
+            }
+          },
+        );
+      }
+
       db.run("COMMIT");
     });
 
@@ -115,13 +176,6 @@ INSERT OR REPLACE INTO Current_Customer_Details (
     });
   }
 });
-
-/**
- * GET /api/initialCustomer/combined
- * Returns joined data from:
- *   - Current_Customer_Details
- *   - Initial_Ticket_Breakdown_Details
- */
 
 router.get("/combined", async (req, res) => {
   try {
@@ -230,12 +284,6 @@ router.get("/combined", async (req, res) => {
   }
 });
 
-/* ---------------------------------------------
-   GET /api/loyalty/current-tiers
-   Get all Current_Loyalty_Tier values
----------------------------------------------- */
-
-// 🟣 Fetch all Monthly_Upgrade_Details
 router.get("/monthly-upgrades", async (req, res) => {
   try {
     const sql = `
@@ -276,135 +324,41 @@ router.get("/monthly-upgrades", async (req, res) => {
   }
 });
 
-// router.post("/monthly-update", async (req, res) => {
-//   const updates = req.body.customers;
-//   const Last_Update = req.body.Last_Update;
-//   if (!Array.isArray(updates) || updates.length === 0) {
-//     return res.status(400).json({
-//       success: false,
-//       message: "Invalid input: expected a non-empty array of updates.",
-//     });
-//   }
+router.get("/monthly-upgrade-summery", async (req, res) => {
+  try {
+    const sql = `
+      SELECT 
+        *
+      FROM Monthly_Upgrades_Summery
+    `;
 
-//   try {
-//     db.serialize(() => {
-//       db.run("BEGIN TRANSACTION");
+    // Query the database
+    db.all(sql, [], (err, rows) => {
+      if (err) {
+        console.error("❌ Error fetching Monthly_Upgrades_Summery data:", err);
+        return res.status(500).json({
+          success: false,
+          message: "Failed to fetch Monthly_Upgrades_Summery data",
+          error: err.message,
+        });
+      }
 
-//       updates.forEach((entry) => {
-//         const { MobileNumber, Loyalty_Tier, Ticket_Count } = entry;
-//         const Current_Ticket_Count = Ticket_Count;
-//         // 1️⃣ Update Current_Customer_Details
-
-//          const preDat = `select Current_Loyalty_Tier,Current_Ticket_Count from Current_Customer_Details where MobileNumber = ?  DESC LIMIT 1`;
-//         db.get(preDat, [MobileNumber], (err, row) => {
-//           if (err) {
-//             console.error(`❌ Error fetching previous data for ${MobileNumber}:`, err.message);
-//             return;
-//           }
-//           const lastMonthTicketCount = row ? row.Current_Loyalty_Tier : null;
-//           const lastMonthLoyaltyTier = row ? row.Current_Ticket_Count : null;
-
-//         const new_Loyalty_Tier = Loyalty_Tier
-
-//         const TierPriority = ['Platinum', 'Gold', 'Silver', 'Blue', 'Warning' , 'Rejected'];
-
-//         let Evaluation_Status = "Same";
-
-// if (lastMonthLoyaltyTier && new_Loyalty_Tier) {
-//   const prevIndex = TierPriority.indexOf(lastMonthLoyaltyTier);
-//   const newIndex  = TierPriority.indexOf(new_Loyalty_Tier);
-
-//   if (prevIndex !== -1 && newIndex !== -1) {
-//     if (newIndex < prevIndex) {
-//       Evaluation_Status = "Upgraded";
-//     } else if (newIndex > prevIndex) {
-//       Evaluation_Status = "Down";
-//     } else {
-//       Evaluation_Status = "Same";
-//     }
-//   }
-// }
-
-//         const updateSql = `
-//           UPDATE Current_Customer_Details
-//           SET
-//             Last_Update = ?,
-//             Current_Loyalty_Tier = ?,
-//             Current_Ticket_Count =               COALESCE(Current_Ticket_Count, 0) + COALESCE(?, 0)
-
-//  Last_Month_Ticket_Count = ?,
-//       Last_Month_Loyalty_Tier = ?,
-//       Evaluation_Status = ?,
-
-//           WHERE MobileNumber = ?
-//         `;
-
-//         db.run(
-//           updateSql,
-//           [Last_Update, new_Loyality_Tier, Current_Ticket_Count, lastMonthTicketCount,lastMonthLoyaltyTier, MobileNumber],
-//           (err) => {
-//             if (err) {
-//               console.error(`❌ Error updating ${MobileNumber}:`, err.message);
-//             } else {
-//               console.log(
-//                 `✅ Updated Current_Customer_Details for ${MobileNumber}`
-//               );
-//             }
-//           }
-//         );
-
-//         // 2️⃣ Insert into Monthly_Upgrade_Details
-//         const insertSql = `
-//           INSERT INTO Monthly_Upgrade_Details (
-//             MobileNumber,
-//             Last_Update,
-//             Month_Tier,
-
-//             Monthly_Ticket_Count
-
-//           ) VALUES (?, ?, ? , ?)
-//         `;
-
-//         db.run(
-//           insertSql,
-//           [MobileNumber, Last_Update, Loyalty_Tier, Current_Ticket_Count],
-//           (err) => {
-//             if (err) {
-//               console.error(
-//                 `❌ Error inserting Monthly_Upgrade_Details for ${MobileNumber}:`,
-//                 err.message
-//               );
-//             } else {
-//               console.log(
-//                 `🆕 Added Monthly_Upgrade_Details for ${MobileNumber}`
-//               );
-//             }
-//           }
-//         );
-//       });
-
-//       db.run("COMMIT", (err) => {
-//         if (err) {
-//           console.error("❌ Commit failed:", err.message);
-//           db.run("ROLLBACK");
-//         }
-//       });
-//     });
-
-//     res.status(200).json({
-//       success: true,
-//       message: `Processed ${updates.length} monthly updates successfully.`,
-//     });
-
-//   } catch (error) {
-//     console.error("❌ Server error during monthly update:", error);
-//     res.status(500).json({
-//       success: false,
-//       message: "Server error while processing monthly updates",
-//       error: error.message,
-//     });
-//   }
-// });
+      res.status(200).json({
+        success: true,
+        message: "Monthly_Upgrades_Summery fetched successfully",
+        data: rows,
+        count: rows.length,
+      });
+    });
+  } catch (error) {
+    console.error("❌ Server error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+});
 
 router.post("/monthly-update", async (req, res) => {
   const updates = req.body.customers;
@@ -416,6 +370,14 @@ router.post("/monthly-update", async (req, res) => {
       message: "Invalid input: expected a non-empty array of updates.",
     });
   }
+
+  // ✅ Monthly summary counters
+  const summary = {
+    Upgraded: 0,
+    Downgrades: 0,
+    Same: 0,
+    New_Customers: 0,
+  };
 
   try {
     db.serialize(() => {
@@ -430,7 +392,6 @@ router.post("/monthly-update", async (req, res) => {
           SELECT Current_Loyalty_Tier, Current_Ticket_Count
           FROM Current_Customer_Details
           WHERE MobileNumber = ?
-          ORDER BY Last_Update DESC
           LIMIT 1
         `;
 
@@ -440,9 +401,32 @@ router.post("/monthly-update", async (req, res) => {
             return;
           }
 
-          const lastMonthLoyaltyTier = row?.Current_Loyalty_Tier || null;
-          const lastMonthTicketCount = row?.Current_Ticket_Count || 0;
-          const new_Loyalty_Tier = Loyalty_Tier;
+          const lastTier = row?.Current_Loyalty_Tier || null;
+          const lastTicketCount = row?.Current_Ticket_Count || 0;
+
+          let newTier = Loyalty_Tier;
+
+          // 🔴 Special downgrade rules
+          if (lastTier === "Blue" && Loyalty_Tier === "Blue") {
+            newTier = "Warning";
+            console.log(
+              lastTier              +" (" + lastTicketCount + " )" + "->",
+              newTier + " (" + Ticket_Count + " )",
+            );
+          } else if (lastTier === "Warning" && Loyalty_Tier === "Blue") {
+            newTier = "Rejected";
+            console.log(
+              lastTier
+              +" (" + lastTicketCount + " )" + "->",
+              newTier + " (" + Ticket_Count + " )",
+            );
+          } else {
+            console.log(
+              lastTier
+              +" (" + lastTicketCount + " )" + "->",
+              newTier + " (" + Ticket_Count + " )",
+            );
+          }
 
           const TierPriority = [
             "Platinum",
@@ -455,13 +439,22 @@ router.post("/monthly-update", async (req, res) => {
 
           let Evaluation_Status = "Same";
 
-          if (lastMonthLoyaltyTier && new_Loyalty_Tier) {
-            const prevIndex = TierPriority.indexOf(lastMonthLoyaltyTier);
-            const newIndex = TierPriority.indexOf(new_Loyalty_Tier);
+          if (!lastTier) {
+            summary.New_Customers++;
+          } else {
+            const prevIndex = TierPriority.indexOf(lastTier);
+            const newIndex = TierPriority.indexOf(newTier);
 
             if (prevIndex !== -1 && newIndex !== -1) {
-              if (newIndex < prevIndex) Evaluation_Status = "Upgraded";
-              else if (newIndex > prevIndex) Evaluation_Status = "Down";
+              if (newIndex < prevIndex) {
+                Evaluation_Status = "Upgraded";
+                summary.Upgraded++;
+              } else if (newIndex > prevIndex) {
+                Evaluation_Status = "Down";
+                summary.Downgrades++;
+              } else {
+                summary.Same++;
+              }
             }
           }
 
@@ -481,10 +474,10 @@ router.post("/monthly-update", async (req, res) => {
             updateSql,
             [
               Last_Update,
-              new_Loyalty_Tier,
+              newTier,
               Ticket_Count,
-              lastMonthTicketCount,
-              lastMonthLoyaltyTier,
+              lastTicketCount,
+              lastTier,
               Evaluation_Status,
               MobileNumber,
             ],
@@ -494,7 +487,7 @@ router.post("/monthly-update", async (req, res) => {
                 return;
               }
 
-              const insertSql = `
+              const insertMonthlySql = `
                 INSERT INTO Monthly_Upgrade_Details (
                   MobileNumber,
                   Last_Update,
@@ -504,28 +497,69 @@ router.post("/monthly-update", async (req, res) => {
               `;
 
               db.run(
-                insertSql,
-                [MobileNumber, Last_Update, new_Loyalty_Tier, Ticket_Count],
+                insertMonthlySql,
+                [MobileNumber, Last_Update, newTier, Ticket_Count],
                 (err) => {
                   if (err) {
                     console.error(
-                      `❌ Insert failed ${MobileNumber}:`,
-                      err.message
+                      `❌ Monthly insert failed ${MobileNumber}:`,
+                      err.message,
                     );
                     return;
                   }
 
                   pending--;
+
+                  // ✅ When all customers processed
                   if (pending === 0) {
-                    db.run("COMMIT");
-                    res.status(200).json({
-                      success: true,
-                      message: `Processed ${updates.length} monthly updates successfully.`,
-                    });
+                    const summarySql = `
+
+    INSERT OR REPLACE INTO Monthly_Upgrades_Summery (
+      Evaluation,
+      Upgrades,
+      Downgrades,
+      Same,
+      New_Customers
+    ) VALUES (?, ?, ?, ?, ?)
+  `;
+
+                    db.run(
+                      summarySql,
+                      [
+                        Last_Update,
+                        summary.Upgraded,
+                        summary.Downgrades,
+                        summary.Same,
+                        0, // ✅ correct source
+                      ],
+                      (err) => {
+                        if (err) {
+                          console.error(
+                            "❌ Summary insert failed:",
+                            err.message,
+                          );
+                          db.run("ROLLBACK");
+                          return res.status(500).json({
+                            success: false,
+                            message: "Failed to save monthly summary",
+                          });
+                        }
+
+                        db.run("COMMIT");
+                        res.status(200).json({
+                          success: true,
+                          message: `Processed ${updates.length} monthly updates successfully.`,
+                          summary: {
+                            ...summary,
+                            New_Customers: 0,
+                          },
+                        });
+                      },
+                    );
                   }
-                }
+                },
               );
-            }
+            },
           );
         });
       });
@@ -546,7 +580,7 @@ router.delete("/delete-all", async (req, res) => {
     // Tables to clear (only data)
     const tables = [
       "Current_Customer_Details",
-      "Initial_Ticket_Breakdown_Details",
+      "Monthly_Upgrades_Summery",
       "Monthly_Upgrade_Details",
     ];
 
@@ -595,7 +629,6 @@ router.delete("/delete-all", async (req, res) => {
     });
   }
 });
-
 // 📊 Fetch all Monthly_Upgrade_Details
 router.get("/monthly-upgrades", async (req, res) => {
   try {
@@ -627,7 +660,7 @@ router.get("/monthly-upgrades", async (req, res) => {
       }
 
       console.log(
-        `✅ Retrieved ${rows.length} Monthly_Upgrade_Details records`
+        `✅ Retrieved ${rows.length} Monthly_Upgrade_Details records`,
       );
       res.status(200).json({
         success: true,

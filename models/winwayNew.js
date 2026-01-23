@@ -22,7 +22,7 @@ db.serialize(() => {
       type TEXT,
       updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
     )
-  `
+  `,
   ).run();
 
   // Users table
@@ -34,7 +34,7 @@ db.serialize(() => {
       email TEXT UNIQUE,
       password TEXT
     )
-  `
+  `,
   ).run();
 
   // Current Customer Details
@@ -62,8 +62,6 @@ db.serialize(() => {
     );
   `);
 
- 
-  
   // Monthly Upgrade Table
 
   db.run(`
@@ -76,6 +74,17 @@ db.serialize(() => {
       Monthly_Ticket_Count INTEGER,
       PRIMARY KEY (MobileNumber, Last_Update),
       FOREIGN KEY (MobileNumber) REFERENCES Current_Customer_Details(MobileNumber)
+    );
+  `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS Monthly_Upgrades_Summery (
+      Downgrades INTEGER,
+      New_Customers INTEGER,
+      Evaluation TEXT,
+      Upgrades INTEGER,
+      Same INTEGER,
+      PRIMARY KEY (Evaluation)
     );
   `);
 

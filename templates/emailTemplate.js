@@ -32,7 +32,7 @@ export const generateEmailTemplate = (
   tblData = [],
   superPrizes = {},
   weekStart = "",
-  weekEnd = ""
+  weekEnd = "",
 ) => {
   const formatDate = (d) =>
     d
@@ -109,12 +109,12 @@ export const generateEmailTemplate = (
   };
 
   const chartUrl = `https://quickchart.io/chart?c=${encodeURIComponent(
-    JSON.stringify(chartConfig)
+    JSON.stringify(chartConfig),
   )}&backgroundColor=white&width=250&height=250&format=png`;
 
   // ✅ Prizes sorted by highest value
   const sortedPrizes = Object.entries(superPrizes || {}).sort(
-    (a, b) => Number(b[1]) - Number(a[1])
+    (a, b) => Number(b[1]) - Number(a[1]),
   );
   const prizeRows = sortedPrizes.length
     ? sortedPrizes
@@ -137,7 +137,7 @@ export const generateEmailTemplate = (
               <tr>
                 <td align="left" valign="middle" style="padding-right:8px;">
                   <div style="font-size:16px;font-weight:700;color:#FFD700;">Rs. ${Number(
-                    value
+                    value,
                   ).toLocaleString()}</div>
                 </td>
                 <td align="right" valign="middle">
@@ -155,7 +155,7 @@ export const generateEmailTemplate = (
             i % 2 === 1
               ? "</tr><tr><td colspan='2' height='12'></td></tr><tr>"
               : "<td width='4%'>&nbsp;</td>"
-          }`
+          }`,
         )
         .join("")
     : `<p style="color:#fff;font-size:14px;">No super prizes available this week.</p>`;
@@ -206,7 +206,7 @@ export const generateEmailTemplate = (
               <div style="background:linear-gradient(90deg,#7b2ff7,#d4af37);color:#fff;
                           font-size:17px;font-weight:600;padding:12px 22px;border-radius:40px;margin-bottom:25px;">
                 You’ve Purchased <strong>${Number(
-                  tickets
+                  tickets,
                 ).toLocaleString()}</strong> Total Tickets This Week
               </div>
               <p style="font-size:15px;color:#000;">Here’s Your Weekly Purchase Summary</p>
@@ -294,7 +294,7 @@ export const generateEmailTemplate = (
               <div style="background:linear-gradient(145deg,#ffeb99,#d4af37);color:#3d0066;
                           border-radius:20px;padding:20px 25px;width:85%;font-weight:700;font-size:19px;">
                 This Week Alone, You Have Won <strong>Rs. ${Number(
-                  winnings || 0
+                  winnings || 0,
                 ).toLocaleString()}/=</strong>
               </div>
             </td>
@@ -341,6 +341,8 @@ export const generateEmailTemplate = (
 };
 
 const getTierValue = (tier) => {
+  console.log(tier);
+
   if (tier.toUpperCase() == "PLATINUM") {
     return {
       percentage: "5%",
@@ -355,6 +357,11 @@ const getTierValue = (tier) => {
     return {
       percentage: "2.5%",
       tickets: 300,
+    };
+  } else {
+    return {
+      percentage: "0",
+      tickets: 0,
     };
   }
 };
@@ -436,10 +443,10 @@ export const generateCardImage = async (name, customer, tier, number) => {
               tier.toLowerCase() === "gold"
                 ? "#d4af37"
                 : tier.toLowerCase() === "silver"
-                ? "#c0c0c0"
-                : tier.toLowerCase() === "platinum"
-                ? "#e5e4e2"
-                : "#a974ff"
+                  ? "#c0c0c0"
+                  : tier.toLowerCase() === "platinum"
+                    ? "#e5e4e2"
+                    : "#a974ff"
             };
             font-weight:600;
           ">
@@ -480,10 +487,11 @@ export const generateCardImage = async (name, customer, tier, number) => {
 export const generateLoyaltyWelcomeEmail = (
   name = "Valued Customer",
   customer = {},
-  number
+  number,
 ) => {
   const tier = customer?.CustomerInfo?.Current_Loyalty_Tier || "-";
   const gender = customer?.CustomerInfo?.Gender || "-";
+  console.log(tier);
 
   return `
 <!DOCTYPE html>
@@ -584,10 +592,10 @@ export const generateLoyaltyWelcomeEmail = (
                             tier.toLowerCase() === "gold"
                               ? "#d4af37"
                               : tier.toLowerCase() === "silver"
-                              ? "#c0c0c0"
-                              : tier.toLowerCase() === "platinum"
-                              ? "#e5e4e2"
-                              : "#a974ff"
+                                ? "#c0c0c0"
+                                : tier.toLowerCase() === "platinum"
+                                  ? "#e5e4e2"
+                                  : "#a974ff"
                           };
                           font-weight:600;">
                           ${tier.toUpperCase()}
@@ -739,7 +747,7 @@ export const generateLoyaltyWelcomeEmail = (
 export const generateLoyaltUpgradeEmail = (
   name = "Valued Customer",
   customer = {},
-  number // (optional) fallback mobile
+  number, // (optional) fallback mobile
 ) => {
   const info = customer?.CustomerInfo || {};
   const tier = info?.Current_Loyalty_Tier || "-";
@@ -819,10 +827,10 @@ export const generateLoyaltUpgradeEmail = (
               tier.toLowerCase() === "gold"
                 ? "#d4af37"
                 : tier.toLowerCase() === "silver"
-                ? "#c0c0c0"
-                : tier.toLowerCase() === "platinum"
-                ? "#e5e4e2"
-                : "#a974ff"
+                  ? "#c0c0c0"
+                  : tier.toLowerCase() === "platinum"
+                    ? "#e5e4e2"
+                    : "#a974ff"
             };
             font-weight:600;
           ">
@@ -926,10 +934,10 @@ export const generateLoyaltUpgradeEmail = (
               tier.toLowerCase() === "gold"
                 ? "#d4af37"
                 : tier.toLowerCase() === "silver"
-                ? "#c0c0c0"
-                : tier.toLowerCase() === "platinum"
-                ? "#e5e4e2"
-                : "#a974ff"
+                  ? "#c0c0c0"
+                  : tier.toLowerCase() === "platinum"
+                    ? "#e5e4e2"
+                    : "#a974ff"
             };
             font-weight:600;
           ">
@@ -1033,10 +1041,10 @@ export const generateLoyaltUpgradeEmail = (
               tier.toLowerCase() === "gold"
                 ? "#d4af37"
                 : tier.toLowerCase() === "silver"
-                ? "#c0c0c0"
-                : tier.toLowerCase() === "platinum"
-                ? "#e5e4e2"
-                : "#a974ff"
+                  ? "#c0c0c0"
+                  : tier.toLowerCase() === "platinum"
+                    ? "#e5e4e2"
+                    : "#a974ff"
             };
             font-weight:600;
           ">
@@ -1307,7 +1315,7 @@ function parseYearMonth(text) {
 export const generateLoyaltDowngradeEmail = (
   name = "Valued Customer",
   customer = {},
-  number // (optional) fallback mobile
+  number, // (optional) fallback mobile
 ) => {
   const info = customer?.CustomerInfo || {};
   const tier = info?.Current_Loyalty_Tier || "-";
@@ -1387,10 +1395,10 @@ downgraded from <strong> ${prevTier} to    <strong> Gold</strong>, based on your
               tier.toLowerCase() === "gold"
                 ? "#d4af37"
                 : tier.toLowerCase() === "silver"
-                ? "#c0c0c0"
-                : tier.toLowerCase() === "platinum"
-                ? "#e5e4e2"
-                : "#a974ff"
+                  ? "#c0c0c0"
+                  : tier.toLowerCase() === "platinum"
+                    ? "#e5e4e2"
+                    : "#a974ff"
             };
             font-weight:600;
           ">
@@ -1507,10 +1515,10 @@ downgraded from <strong> ${prevTier} to    <strong> Gold</strong>, based on your
               tier.toLowerCase() === "gold"
                 ? "#d4af37"
                 : tier.toLowerCase() === "silver"
-                ? "#c0c0c0"
-                : tier.toLowerCase() === "platinum"
-                ? "#e5e4e2"
-                : "#a974ff"
+                  ? "#c0c0c0"
+                  : tier.toLowerCase() === "platinum"
+                    ? "#e5e4e2"
+                    : "#a974ff"
             };
             font-weight:600;
           ">
@@ -1788,7 +1796,7 @@ export const generateLoyaltyCustomeEmail = (
   name = "Valued Customer",
   body,
   title,
-  customer = {}
+  customer = {},
 ) => {
   const gender = customer?.Gender || "-";
 
@@ -1916,7 +1924,7 @@ export const generateLoyaltyCustomeEmail = (
 export const generateLoyaltySameEmail = (
   name = "Valued Customer",
   customer = {},
-  number // (optional) fallback mobile
+  number, // (optional) fallback mobile
 ) => {
   const info = customer?.CustomerInfo || {};
   const history = Array.isArray(customer?.History) ? customer.History : [];

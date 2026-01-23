@@ -4,9 +4,9 @@ import db from "../models/winwayNew.js";
 const router = express.Router();
 
 
-//  db.prepare("DROP TABLE IF EXISTS Monthly_Upgrade_Details").run();
+//   db.prepare("DROP TABLE IF EXISTS Monthly_Upgrade_Details").run();
 //  db.prepare("DROP TABLE IF EXISTS Current_Customer_Details").run();
-
+//  db.prepare("DROP TABLE IF EXISTS Monthly_Upgrades_Summery").run();
 
 router.get("/all-customers", (req, res) => {
   try {
