@@ -26,6 +26,18 @@ db.serialize(() => {
   ).run();
 
   // Users table
+  db.run(`
+  CREATE TABLE IF NOT EXISTS Customer_Profile_Image (
+    MobileNumber TEXT PRIMARY KEY,
+    ImagePath TEXT NOT NULL,
+    UploadedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (MobileNumber)
+      REFERENCES Current_Customer_Details(MobileNumber)
+      ON DELETE CASCADE
+      ON UPDATE CASCADE
+  );
+`);
+
   db.prepare(
     `
     CREATE TABLE IF NOT EXISTS users (
@@ -110,6 +122,30 @@ db.serialize(() => {
 
   console.log("📦 All new tables created successfully.");
 });
+
+// Loyalty Promotions Table
+db.run(`
+  CREATE TABLE IF NOT EXISTS loyality_promotions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+    promotion_code TEXT NOT NULL UNIQUE,
+    title TEXT NOT NULL,
+    description TEXT NOT NULL,
+
+    start_date TEXT NOT NULL,   -- YYYY-MM-DD
+    end_date TEXT NOT NULL,     -- YYYY-MM-DD
+
+    image TEXT,                -- image path or URL
+    terms_conditions TEXT,
+
+    eligible_tiers TEXT NOT NULL,  -- JSON array: ["Blue","Silver","Gold"]
+
+    status TEXT CHECK (status IN ('ACTIVE', 'INACTIVE')) DEFAULT 'INACTIVE',
+
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+`);
 
 // -------------------------------------------------------------
 // ⭐ IMPORTANT FIX ⭐

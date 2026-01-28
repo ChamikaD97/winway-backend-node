@@ -1,6 +1,8 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
 
 // Load .env properly
 dotenv.config({ override: true });
@@ -11,18 +13,21 @@ import emailLoyalityRoute from "./routes/emailLoyalityRoute.js";
 import reportRoute from "./routes/reportRoute.js";
 import userRouter from "./routes/userRoutes.js";
 import settingsRouter from "./routes/settingsRoutes.js";
-import initialCustomer from "./newRoutes/initialCustomer.js";
+import loyalCustomer from "./newRoutes/loyalCustomer.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
 import dailyUpgradeRoutes from "./newRoutes/dailyUpgradeRouter.js";
 import smsRouter from "./newRoutes/smsRouter.js";
 
 
 import userRoutes from "./routes/loyalityUserPortalRoutes.js";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // INIT
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Debug route loading
 console.log("📦 Initializing routes...");
@@ -40,7 +45,7 @@ app.use("/api/users", userRouter);
 
 app.use("/api/settings", settingsRouter);
 
-app.use("/api/initialCustomer", initialCustomer);
+app.use("/api/loyalCustomer", loyalCustomer);
 
 app.use("/api", dailyUpgradeRoutes);
 
