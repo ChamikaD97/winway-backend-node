@@ -137,10 +137,16 @@ db.run(`
 
     image TEXT,                -- image path or URL
     terms_conditions TEXT,
-
+    
     eligible_tiers TEXT NOT NULL,  -- JSON array: ["Blue","Silver","Gold"]
 
-    status TEXT CHECK (status IN ('ACTIVE', 'INACTIVE')) DEFAULT 'INACTIVE',
+    type TEXT NOT NULL
+      CHECK (type IN ('LOYAL', 'GENERAL'))
+      DEFAULT 'GENERAL',
+
+    status TEXT
+      CHECK (status IN ('ACTIVE', 'INACTIVE'))
+      DEFAULT 'INACTIVE',
 
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP

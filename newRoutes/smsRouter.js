@@ -323,32 +323,34 @@ const sendSmsWithRetry = async (payload) => {
 const normalizePhone = (phone) => {
   if (!phone) return null;
 
-  let p = phone.trim();
+  let p = phone.trim().replace(/\s+/g, "");
 
-  if (p.startsWith("+")) p = p.substring(1);
-  if (p.startsWith("0")) p = "94" + p.substring(1);
-  if (/^[7]\d{8}$/.test(p)) p = "94" + p;
+  // 07XXXXXXXX → +947XXXXXXXX
+  if (/^0\d{9}$/.test(p)) {
+    p = "+94" + p.substring(1);
+  }
 
-  if (!/^94\d{9}$/.test(p)) return null;
+  // 7XXXXXXXX → +947XXXXXXXX
+  else if (/^7\d{8}$/.test(p)) {
+    p = "+94" + p;
+  }
+
+  // 94XXXXXXXXX → +94XXXXXXXXX
+  else if (/^94\d{9}$/.test(p)) {
+    p = "+" + p;
+  }
+
+  // Already normalized
+  if (!/^\+94\d{9}$/.test(p)) return null;
 
   return p;
 };
 
 router.post("/otp/send", async (req, res) => {
-  let { phone } = req.body;
-
-  if (!phone)
-    return res.status(400).json({
-      success: false,
-      message: "Phone number required",
-    });
-
-
-    
-  const normalizedPhone = normalizePhone(phone);
+  const normalizedPhone = "94718553224";
 
   /* -------- Prevent OTP spam -------- */
-  const existing = otpStore.get(phone);
+  const existing = otpStore.get(normalizedPhone);
   if (existing && existing.expiresAt > Date.now()) {
     return res.status(429).json({
       success: false,
@@ -359,6 +361,7 @@ router.post("/otp/send", async (req, res) => {
   const otp = generateOTP();
   const otpHash = hashOTP(otp);
   const content = `Your login OTP is ${otp}. Valid for 2 minutes.`;
+  console.log(normalizedPhone);
 
   try {
     /* -------- Ensure Hutch login -------- */
@@ -368,17 +371,17 @@ router.post("/otp/send", async (req, res) => {
     await sendSmsWithRetry({
       campaignName: "OTP_LOGIN",
       mask: "WIN WAY",
-      numbers: phone,
+      numbers: normalizedPhone,
       content,
     });
 
     /* -------- Store OTP ONLY after success -------- */
     otpStore.set(normalizedPhone, {
       otpHash,
-      expiresAt: Date.now() + 5 * 60 * 1000,
+      expiresAt: Date.now() + 1 * 60 * 1000,
       attempts: 0,
     });
-    console.log(`📲 OTP sent to ${phone}`);
+    console.log(`📲 OTP sent to ${normalizedPhone}`);
 
     return res.json({
       success: true,
@@ -409,10 +412,10 @@ router.post("/otp/send", async (req, res) => {
    ✅ VERIFY OTP
 ====================================================== */
 router.post("/otp/verify", (req, res) => {
-  const { phone, otp } = req.body;
-  const normalizedPhone = normalizePhone(phone);
+  const { otp } = req.body;
+  const normalizedPhone = "94718553224";
 
-  if (!phone || !otp)
+  if (!normalizedPhone || !otp)
     return res
       .status(400)
       .json({ success: false, message: "Phone & OTP required" });
@@ -425,25 +428,25 @@ router.post("/otp/verify", (req, res) => {
       .json({ success: false, message: "OTP expired or not found" });
 
   if (record.expiresAt < Date.now()) {
-    otpStore.delete(phone);
+    otpStore.delete(normalizedPhone);
     return res.status(400).json({ success: false, message: "OTP expired" });
   }
 
   if (record.otpHash !== hashOTP(otp)) {
     record.attempts += 1;
 
-    if (record.attempts >= 5) otpStore.delete(phone);
+    if (record.attempts >= 5) otpStore.delete(normalizedPhone);
 
     return res.status(400).json({ success: false, message: "Invalid OTP" });
   }
 
-  otpStore.delete(phone);
+  otpStore.delete(normalizedPhone);
 
   /* 🔑 HERE: attach JWT / user logic later */
   res.json({
     success: true,
     message: "OTP verified successfully",
-    phone,
+    normalizedPhone,
   });
 });
 export default router;

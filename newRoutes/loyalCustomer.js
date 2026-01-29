@@ -5,6 +5,7 @@ import multer from "multer";
 import promotionUpload from "../middlewares/promotionUpload.js";
 import path from "path";
 import fs from "fs";
+import { log } from "console";
 const router = express.Router();
 
 router.post("/", async (req, res) => {
@@ -281,9 +282,36 @@ router.get("/combined", async (req, res) => {
     });
   }
 });
+const normalizePhone = (phone) => {
+  if (!phone) return null;
+
+  let p = phone.trim().replace(/\s+/g, "");
+
+  // 07XXXXXXXX → +947XXXXXXXX
+  if (/^0\d{9}$/.test(p)) {
+    p = "+94" + p.substring(1);
+  }
+
+  // 7XXXXXXXX → +947XXXXXXXX
+  else if (/^7\d{8}$/.test(p)) {
+    p = "+94" + p;
+  }
+
+  // 94XXXXXXXXX → +94XXXXXXXXX
+  else if (/^94\d{9}$/.test(p)) {
+    p = "+" + p;
+  }
+
+  // Already normalized
+  if (!/^\+94\d{9}$/.test(p)) return null;
+
+  return p;
+};
+
 router.get("/combined/:mobile", async (req, res) => {
   try {
     const { mobile } = req.params;
+    console.log(normalizePhone(mobile));
 
     if (!mobile) {
       return res.status(400).json({
@@ -317,7 +345,7 @@ router.get("/combined/:mobile", async (req, res) => {
       LIMIT 1
     `;
 
-    db.get(sql,  ["+94778978448"], (err, r) => {
+    db.get(sql, [normalizePhone(mobile)], (err, r) => {
       if (err) {
         console.error("❌ Error fetching customer by mobile:", err.message);
         return res.status(500).json({
@@ -826,6 +854,7 @@ export const getActivePromotions = (req, res) => {
     ORDER BY start_date ASC
     `,
     [],
+
     (err, rows) => {
       if (err) return res.status(500).json({ error: err.message });
       res.json(rows);
@@ -845,10 +874,11 @@ export const getPromotionById = (req, res) => {
 
 export const getCustomerByMobile = (req, res) => {
   const { mobile } = req.params;
+  console.log(normalizePhone(mobile));
 
   db.get(
     `SELECT * FROM Current_Customer_Details WHERE MobileNumber = ?`,
-    ["+94778978448"],
+    [normalizePhone(mobile)],
     (err, row) => {
       if (err) return res.status(500).json({ error: err.message });
       if (!row)
@@ -961,6 +991,7 @@ export const createPromotion = (req, res) => {
     terms_conditions,
     status,
     eligible_tiers, // ✅ NEW
+    type,
   } = req.body;
 
   if (
@@ -968,7 +999,8 @@ export const createPromotion = (req, res) => {
     !title ||
     !start_date ||
     !end_date ||
-    !eligible_tiers
+    !eligible_tiers ||
+    !type
   ) {
     return res.status(400).json({ error: "Missing required fields" });
   }
@@ -998,8 +1030,8 @@ export const createPromotion = (req, res) => {
     `
     INSERT INTO loyality_promotions
     (promotion_code, title, description, start_date, end_date, image,
-     terms_conditions, eligible_tiers, status)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+     terms_conditions, eligible_tiers, status , type)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ? , ?)
     `,
     [
       promotion_code,
@@ -1011,6 +1043,7 @@ export const createPromotion = (req, res) => {
       terms_conditions || "",
       tiersJson,
       status || "INACTIVE",
+      type,
     ],
     function (err) {
       if (err) return res.status(400).json({ error: err.message });
