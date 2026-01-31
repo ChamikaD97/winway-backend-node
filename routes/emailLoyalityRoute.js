@@ -113,7 +113,7 @@ export const sendWelcomeEmail = async (req, res) => {
         cardImage: imgPath,
       });
     }
-    
+
     let html = "";
 
     if (type === "loyalty_welcome") {
@@ -213,7 +213,7 @@ export const sendCustomeEmail = async (req, res) => {
           mappedBody, // ✅ mapped body
           title,
           customerData, // ✅ object (not string)
-          number
+          number,
         );
         break;
 
