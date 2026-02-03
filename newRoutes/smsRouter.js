@@ -43,8 +43,6 @@ router.post("/login", (req, res) => {
       });
     }
 
-    console.log("🔑 Attempting Hutch Login...");
-
     axios
       .post(
         `${BASE_URL}/login`,
@@ -54,9 +52,6 @@ router.post("/login", (req, res) => {
       .then((response) => {
         accessToken = response.data.accessToken;
         refreshToken = response.data.refreshToken;
-
-        console.log("✅ Hutch Login Success", accessToken);
-        console.log("⚡ Access Token:", accessToken ? "Available" : "Missing");
 
         return res.status(200).json({
           success: true,
@@ -142,14 +137,6 @@ router.post("/send", (req, res) => {
       });
     }
 
-    // ---------------------------------------------------------
-    // 🔍 4. Log the corrected number format
-    // ---------------------------------------------------------
-    console.log("📨 Sending SMS to:", formattedNumbers);
-
-    // ---------------------------------------------------------
-    // 🔍 5. SEND SMS TO HUTCH
-    // ---------------------------------------------------------
     axios
       .post(
         `${BASE_URL}/sendsms`,
@@ -162,8 +149,6 @@ router.post("/send", (req, res) => {
         { headers: getHeaders(true) },
       )
       .then((response) => {
-        console.log("✅ SMS Sent Successfully");
-
         return res.status(200).json({
           success: true,
           message: "SMS sent successfully",
@@ -180,8 +165,6 @@ router.post("/send", (req, res) => {
         });
       });
   } catch (error) {
-    console.log("❌ Server Error:");
-
     return res.status(500).json({
       success: false,
 
@@ -208,8 +191,6 @@ router.post("/refresh", (req, res) => {
       .then((response) => {
         accessToken = response.data?.access_token;
         refreshToken = response.data?.refresh_token;
-
-        console.log("🔄 Token Refreshed Successfully");
 
         return res.status(200).json({
           success: true,
@@ -263,8 +244,6 @@ router.post("/login", async (req, res) => {
     accessToken = response.data.accessToken;
     refreshToken = response.data.refreshToken;
 
-    console.log("✅ Hutch Login Successful");
-
     res.json({
       success: true,
       message: "Login successful",
@@ -277,8 +256,6 @@ router.post("/login", async (req, res) => {
 
 const ensureHutchLogin = async () => {
   if (accessToken) return;
-
-  console.log("🔐 Auto logging into Hutch...");
 
   const response = await axios.post(
     `${BASE_URL}/login`,
@@ -361,7 +338,6 @@ router.post("/otp/send", async (req, res) => {
   const otp = generateOTP();
   const otpHash = hashOTP(otp);
   const content = `Your login OTP is ${otp}. Valid for 2 minutes.`;
-  console.log(normalizedPhone);
 
   try {
     /* -------- Ensure Hutch login -------- */
@@ -381,7 +357,6 @@ router.post("/otp/send", async (req, res) => {
       expiresAt: Date.now() + 1 * 60 * 1000,
       attempts: 0,
     });
-    console.log(`📲 OTP sent to ${normalizedPhone}`);
 
     return res.json({
       success: true,

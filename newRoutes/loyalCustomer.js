@@ -289,21 +289,16 @@ const normalizePhone = (phone) => {
 
   // 07XXXXXXXX → +947XXXXXXXX
   if (/^0\d{9}$/.test(p)) {
-    p = "+94" + p.substring(1);
+    p = "94" + p.substring(1);
   }
 
   // 7XXXXXXXX → +947XXXXXXXX
   else if (/^7\d{8}$/.test(p)) {
-    p = "+94" + p;
-  }
-
-  // 94XXXXXXXXX → +94XXXXXXXXX
-  else if (/^94\d{9}$/.test(p)) {
-    p = "+" + p;
+    p = "94" + p;
   }
 
   // Already normalized
-  if (!/^\+94\d{9}$/.test(p)) return null;
+  if (!/^\94\d{9}$/.test(p)) return null;
 
   return p;
 };
@@ -880,10 +875,26 @@ export const getCustomerByMobile = (req, res) => {
     `SELECT * FROM Current_Customer_Details WHERE MobileNumber = ?`,
     [normalizePhone(mobile)],
     (err, row) => {
+      console.log(row);
+
       if (err) return res.status(500).json({ error: err.message });
       if (!row)
         return res.status(404).json({ message: "Loyality User Not Found" });
       res.json(row);
+    },
+  );
+};
+export const getAllLoyalCustomers = (req, res) => {
+  db.all(
+    `SELECT * FROM Current_Customer_Details`,
+
+    (err, rows) => {
+      console.log(rows);
+
+      if (err) return res.status(500).json({ error: err.message });
+      if (!rows || rows.length === 0)
+        return res.status(404).json({ message: "Loyality Users Not Found" });
+      res.json(rows);
     },
   );
 };
@@ -1254,6 +1265,9 @@ router.get("/promotions/image/:promotion_code", getPromotionImage);
 router.get("/getPromotionById/:id", getPromotionById);
 
 router.get("/getCustomerByMobile/:mobile", getCustomerByMobile);
+
+router.get("/getAllLoyalCustomers", getAllLoyalCustomers);
+
 /* PUBLIC */
 router.get("/public/active", getActivePromotions);
 

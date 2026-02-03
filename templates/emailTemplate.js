@@ -381,7 +381,17 @@ function toProperCase(name = "") {
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
 }
+const getEndOfCurrentMonth = () => {
+  const now = new Date();
+  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
+  const dd = String(endOfMonth.getDate()).padStart(2, "0");
+  const mm = String(endOfMonth.getMonth() + 1).padStart(2, "0");
+  const yyyy = endOfMonth.getFullYear();
+
+  return `${dd}/${mm}/${yyyy}`;
+};
+const validityDate = getEndOfCurrentMonth();
 export const generateCardImage = async (name, customer, tier, number) => {
   const winwayLogoBase64 = toBase64(winwayLogo);
   const loyaltyLogoBase64 = toBase64(loyality);
@@ -462,7 +472,7 @@ export const generateCardImage = async (name, customer, tier, number) => {
             background:#000;
             color:#fff;
           ">
-            Valid till 31/01/2026
+            Valid till ${validityDate}
           </span>
         </td>
       </tr>
@@ -603,7 +613,7 @@ export const generateLoyaltyWelcomeEmail = (
                       </td>
                       <td align="right">
                         <span style="padding:8px 16px;border-radius:8px;font-size:14px;background:#000;color:#fff;">
-                          Valid till 31/01/2026
+                          Valid till ${validityDate}
                         </span>
                       </td>
                     </tr>
@@ -845,7 +855,7 @@ export const generateLoyaltUpgradeEmail = (
             background:#000;
             color:#fff;
           ">
-            Valid till 31/01/2026
+            Valid till ${validityDate}
           </span>
         </td>
       </tr>
@@ -952,7 +962,7 @@ export const generateLoyaltUpgradeEmail = (
             background:#000;
             color:#fff;
           ">
-            Valid till 31/01/2026
+            Valid till ${validityDate}
           </span>
         </td>
       </tr>
@@ -1059,7 +1069,7 @@ export const generateLoyaltUpgradeEmail = (
             background:#000;
             color:#fff;
           ">
-            Valid till 31/01/2026
+            Valid till ${validityDate}
           </span>
         </td>
       </tr>
@@ -1413,7 +1423,7 @@ downgraded from <strong> ${prevTier} to    <strong> Gold</strong>, based on your
             background:#000;
             color:#fff;
           ">
-            Valid till 31/01/2026
+            Valid till ${validityDate}
           </span>
         </td>
       </tr>
@@ -1533,7 +1543,7 @@ downgraded from <strong> ${prevTier} to    <strong> Gold</strong>, based on your
             background:#000;
             color:#fff;
           ">
-            Valid till 31/01/2026
+            Valid till ${validityDate}
           </span>
         </td>
       </tr>
