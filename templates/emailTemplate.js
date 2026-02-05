@@ -341,7 +341,6 @@ export const generateEmailTemplate = (
 };
 
 const getTierValue = (tier) => {
-  console.log(tier);
 
   if (tier.toUpperCase() == "PLATINUM") {
     return {
@@ -501,7 +500,6 @@ export const generateLoyaltyWelcomeEmail = (
 ) => {
   const tier = customer?.CustomerInfo?.Current_Loyalty_Tier || "-";
   const gender = customer?.CustomerInfo?.Gender || "-";
-  console.log(tier);
 
   return `
 <!DOCTYPE html>

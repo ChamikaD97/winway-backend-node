@@ -54,8 +54,6 @@ router.get("/profile/:mobile", (req, res) => {
 ====================================================== */
 router.get("/dashboard/:mobile", (req, res) => {
   const { mobile } = req.params;
-console.log(mobile);
-
   const sql = `
     SELECT Current_Loyalty_Tier, Current_Ticket_Count,
            WalletBalance, Last_Purchase_Time

@@ -21,13 +21,7 @@ const router = express.Router();
 ---------------------------------------------- */
 router.post("/", async (req, res) => {
   const customers = req.body.customers;
-  console.log(
-    "*****************************************************************"
-  );
-  console.log(customers.length);
-  console.log(
-    "*****************************************************************"
-  );
+
 
   if (!customers || customers.length === 0) {
     return res

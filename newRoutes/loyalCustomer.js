@@ -306,8 +306,6 @@ const normalizePhone = (phone) => {
 router.get("/combined/:mobile", async (req, res) => {
   try {
     const { mobile } = req.params;
-    console.log(normalizePhone(mobile));
-
     if (!mobile) {
       return res.status(400).json({
         success: false,
@@ -518,21 +516,9 @@ router.post("/monthly-update", async (req, res) => {
           // 🔴 Special downgrade rules
           if (lastTier === "Blue" && Loyalty_Tier === "Blue") {
             newTier = "Warning";
-            console.log(
-              lastTier + " (" + lastTicketCount + " )" + "->",
-              newTier + " (" + Ticket_Count + " )",
-            );
           } else if (lastTier === "Warning" && Loyalty_Tier === "Blue") {
             newTier = "Rejected";
-            console.log(
-              lastTier + " (" + lastTicketCount + " )" + "->",
-              newTier + " (" + Ticket_Count + " )",
-            );
           } else {
-            console.log(
-              lastTier + " (" + lastTicketCount + " )" + "->",
-              newTier + " (" + Ticket_Count + " )",
-            );
           }
 
           const TierPriority = [
@@ -869,14 +855,11 @@ export const getPromotionById = (req, res) => {
 
 export const getCustomerByMobile = (req, res) => {
   const { mobile } = req.params;
-  console.log(normalizePhone(mobile));
 
   db.get(
     `SELECT * FROM Current_Customer_Details WHERE MobileNumber = ?`,
     [normalizePhone(mobile)],
     (err, row) => {
-      console.log(row);
-
       if (err) return res.status(500).json({ error: err.message });
       if (!row)
         return res.status(404).json({ message: "Loyality User Not Found" });
@@ -889,8 +872,6 @@ export const getAllLoyalCustomers = (req, res) => {
     `SELECT * FROM Current_Customer_Details`,
 
     (err, rows) => {
-      console.log(rows);
-
       if (err) return res.status(500).json({ error: err.message });
       if (!rows || rows.length === 0)
         return res.status(404).json({ message: "Loyality Users Not Found" });

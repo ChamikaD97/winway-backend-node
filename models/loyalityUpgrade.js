@@ -62,7 +62,7 @@ export const createCustomer = (customer) => {
           function (err) {
             if (err) reject(err);
             else resolve(MobileNumber);
-          }
+          },
         );
       } else {
         const insertSql = `
@@ -91,7 +91,7 @@ export const createCustomer = (customer) => {
           function (err) {
             if (err) reject(err);
             else resolve(MobileNumber);
-          }
+          },
         );
       }
     });
@@ -129,7 +129,7 @@ export const createCustomer = (customer) => {
           function (err) {
             if (err) reject(err);
             else resolve(MobileNumber);
-          }
+          },
         );
       } else {
         const insertSql = `
@@ -158,7 +158,7 @@ export const createCustomer = (customer) => {
           function (err) {
             if (err) reject(err);
             else resolve(MobileNumber);
-          }
+          },
         );
       }
     });
@@ -387,7 +387,7 @@ export const getAllCustomersCombined = () => {
           db.all(sql4, [], (err4, lastMonthBreakdowns) => {
             if (err4) return reject(err4);
             console.log(
-              `✅ Last-month breakdowns: ${lastMonthBreakdowns.length}`
+              `✅ Last-month breakdowns: ${lastMonthBreakdowns.length}`,
             );
 
             // ✅ Join all tables by MobileNumber
