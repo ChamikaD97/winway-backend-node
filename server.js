@@ -18,6 +18,8 @@ import dashboardRoutes from "./routes/dashboardRoutes.js";
 import dailyUpgradeRoutes from "./newRoutes/dailyUpgradeRouter.js";
 import smsRouter from "./newRoutes/smsRouter.js";
 
+import weeklyImagesRoutes from "./routes/weeklyImages.js";
+import saveFile from "./routes/saveFile.js";
 
 import userRoutes from "./routes/loyalityUserPortalRoutes.js";
 const __filename = fileURLToPath(import.meta.url);
@@ -39,8 +41,6 @@ app.use("/email/loyality", emailLoyalityRoute);
 
 app.use("/report", reportRoute);
 
-
-
 app.use("/api/users", userRouter);
 
 app.use("/api/settings", settingsRouter);
@@ -54,6 +54,10 @@ app.use("/dashboard", dashboardRoutes);
 app.use("/sms", smsRouter);
 
 app.use("/api/userPortal", userRoutes);
+
+app.use("/weekly-images", weeklyImagesRoutes);
+
+app.use("/weekly-files", saveFile);
 
 // SERVER START
 const PORT = process.env.PORT || 8001;

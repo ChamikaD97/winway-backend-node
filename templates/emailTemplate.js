@@ -341,7 +341,6 @@ export const generateEmailTemplate = (
 };
 
 const getTierValue = (tier) => {
-
   if (tier.toUpperCase() == "PLATINUM") {
     return {
       percentage: "5%",
@@ -2106,7 +2105,72 @@ export const generateLoyaltySameEmail = (
 
                       
 
-              
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin:12px 0;">
+  <tr>
+    <td width="100%" style="padding:4px 6px;">
+      <table
+        width="100%"
+        cellpadding="0"
+        cellspacing="0"
+        style="
+          border-radius:8px;
+          overflow:hidden;
+          font-size:12px;
+          font-weight:600;
+          text-align:center;
+          border:1px solid #000;
+          line-height:1.2;
+        "
+      >
+        <tr>
+          <!-- Silver -->
+          <td
+            width="33.33%"
+            style="
+              background:#C0C0C0;
+              padding:4px 2px;
+              color:#333;
+              border-right:1px solid #000;
+            "
+          >
+            Silver<br />
+            &gt; 300
+          </td>
+
+          <!-- Gold -->
+          <td
+            width="33.33%"
+            style="
+              background:#E6B800;
+              padding:4px 2px;
+              color:#fff;
+              border-right:1px solid #000;
+            "
+          >
+            Gold<br />
+            &gt; 500
+          </td>
+
+          <!-- Platinum -->
+          <td
+            width="33.33%"
+            style="
+              background:#9B5DE5;
+              padding:4px 2px;
+              color:#fff;
+            "
+          >
+            Platinum<br />
+            &gt; 1000
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+
+
+
               
               
               

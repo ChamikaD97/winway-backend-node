@@ -4,6 +4,7 @@ import nodemailer from "nodemailer";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
+import archiver from "archiver";
 
 import {
   generateEmailTemplate,
@@ -83,7 +84,7 @@ async function sendEmail(req, res, useTemplate = false) {
       parsedTblData,
       parsedSuperPrizes,
       weekStart,
-      weekEnd
+      weekEnd,
     );
 
     const htmlContentImage = genarateImageTemplate(
@@ -93,7 +94,7 @@ async function sendEmail(req, res, useTemplate = false) {
       parsedTblData,
       parsedSuperPrizes,
       weekStart,
-      weekEnd
+      weekEnd,
     );
 
     if (!to || to.trim() === "") {
@@ -136,10 +137,118 @@ async function sendEmail(req, res, useTemplate = false) {
 }
 
 router.post("/send", upload.array("attachments"), (req, res) =>
-  sendEmail(req, res, false)
+  sendEmail(req, res, false),
 );
 router.post("/sendToCustomer", upload.array("attachments"), (req, res) =>
-  sendEmail(req, res, true)
+  sendEmail(req, res, true),
 );
+// ---------------- ZIP ALL WEEKLY FILES & EMAIL ----------------
+router.post("/all-weekly-files", async (req, res) => {
+  try {
+    const recipient = "kosala@winway.lk";
+    const cc = "dharmapriya@thinkcube.com";
+
+    const zipFileName = `Weekly_Files_${Date.now()}.zip`;
+    const zipPath = path.join(__dirname, zipFileName);
+
+    // 1️⃣ Create ZIP file
+    const output = fs.createWriteStream(zipPath);
+    const archive = archiver("zip", { zlib: { level: 9 } });
+
+    archive.pipe(output);
+
+    const files = fs.readdirSync(imageDir);
+
+    files.forEach((file) => {
+      const fullPath = path.join(imageDir, file);
+      if (fs.statSync(fullPath).isFile()) {
+        archive.file(fullPath, { name: file });
+      }
+    });
+
+    await archive.finalize();
+
+    // Wait until ZIP fully written
+    await new Promise((resolve) => output.on("close", resolve));
+
+    // 2️⃣ Send Email with ZIP attachment
+    const transporter = await createTransporter();
+
+    // await transporter.sendMail({
+    //   from: `"WinWay" <${process.env.EMAIL_USER}>`,
+    //   to: recipient,
+    //   subject: "📦 Weekly Files Backup",
+    //   text: "Attached is the complete weekly files backup.",
+    //   attachments: [
+    //     {
+    //       filename: zipFileName,
+    //       path: zipPath,
+    //     },
+    //   ],
+    // });
+
+    // 3️⃣ Delete ZIP after sending
+    await transporter.sendMail({
+      from: `"WinWay Operations" <${process.env.EMAIL_USER}>`,
+      to: recipient,
+      bcc : "chamika@winway.lk",
+      cc: cc,
+      subject: "Weekly Customer Files",
+      html: `
+    <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+      <h2>WinWay Weekly Customer Files</h2>
+      
+      <p>Dear Call Center Team,</p>
+
+      <p>
+        Please find attached the <strong>Weekly Customer Files ZIP</strong>.
+      </p>
+
+      <p>
+        Kindly extract the files and ensure they are sent to the 
+        <strong>relevant customers</strong> as per the provided details.
+      </p>
+
+      <p>
+        Please complete the dispatch process at your earliest convenience
+        and confirm once the files have been successfully delivered.
+      </p>
+
+      <br/>
+
+      <p style="color:#555;">
+        If you encounter any issues, please contact the WinWay Operations team.
+      </p>
+
+      <br/>
+
+      <p>
+        Best Regards,<br/>
+        <strong>WinWay Operations Team</strong>
+      </p>
+    </div>
+  `,
+      attachments: [
+        {
+          filename: zipFileName,
+          path: zipPath,
+        },
+      ],
+    });
+
+    fs.unlinkSync(zipPath);
+
+    res.json({
+      success: true,
+      message: `📧 Weekly files ZIP sent to ${recipient}`,
+    });
+  } catch (err) {
+    console.error("❌ Weekly ZIP email error:", err);
+    res.status(500).json({
+      success: false,
+      error: err.message,
+    });
+  }
+});
 
 export default router;

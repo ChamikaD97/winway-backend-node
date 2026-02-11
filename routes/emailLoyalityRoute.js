@@ -192,6 +192,7 @@ export const sendCustomeEmail = async (req, res) => {
     }
 
     const cc = get("cc");
+    const bcc = get("bcc"); // ✅ ADD THIS
     const number = get("number");
     const name = get("name") || "Valued Customer";
     const type = get("type");
@@ -231,6 +232,7 @@ export const sendCustomeEmail = async (req, res) => {
       from: `"WIN WAY" <${process.env.EMAIL_USER}>`,
       to,
       cc,
+      bcc,
       subject,
       html,
       attachments, // assuming this exists globally
@@ -249,6 +251,38 @@ export const sendCustomeEmail = async (req, res) => {
     });
   }
 };
+router.get("/:type", async (req, res) => {
+  const { type } = req.params;
+
+  try {
+    let html = "";
+
+    switch (type) {
+      case "welcome":
+        html = generateLoyaltyWelcomeEmail("Valued Customer", {}, "000000");
+        break;
+
+      case "upgrade":
+        html = generateLoyaltUpgradeEmail("Valued Customer", {}, "000000");
+        break;
+
+      case "downgrade":
+        html = generateLoyaltDowngradeEmail("Valued Customer", {}, "000000");
+        break;
+
+      case "same-tier":
+        html = generateLoyaltySameEmail("Valued Customer", {}, "000000");
+        break;
+
+      default:
+        return res.status(400).json({ error: "Invalid template type" });
+    }
+
+    res.json({ html });
+  } catch (err) {
+    res.status(500).json({ error: "Template generation failed" });
+  }
+});
 
 router.post("/send-loyalty", upload.none(), sendWelcomeEmail);
 
