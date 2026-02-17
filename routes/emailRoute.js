@@ -191,7 +191,7 @@ router.post("/all-weekly-files", async (req, res) => {
     await transporter.sendMail({
       from: `"WinWay Operations" <${process.env.EMAIL_USER}>`,
       to: recipient,
-      bcc : "chamika@winway.lk",
+      bcc: "chamika@winway.lk",
       cc: cc,
       subject: "Weekly Customer Files",
       html: `

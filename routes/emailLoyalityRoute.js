@@ -13,6 +13,7 @@ const nlbLogo = path.join(__dirname, "nlb_logo.png");
 const card = path.join(__dirname, "card.jpg");
 const loyality = path.join(__dirname, "loyalty.png");
 import {
+  generateCustomerToSupportEmail,
   generateLoyaltDowngradeEmail,
   generateLoyaltyCustomeEmail,
   generateLoyaltySameEmail,
@@ -251,6 +252,7 @@ export const sendCustomeEmail = async (req, res) => {
     });
   }
 };
+
 router.get("/:type", async (req, res) => {
   const { type } = req.params;
 
@@ -283,7 +285,55 @@ router.get("/:type", async (req, res) => {
     res.status(500).json({ error: "Template generation failed" });
   }
 });
+export const sendLoyaltySupportEmail = async (req, res) => {
+  try {
+    const { subject, message, customer, mobile , tier } = req.body;
 
+    if (!subject || !message) {
+      return res.status(400).json({
+        success: false,
+        message: "Subject and message are required",
+      });
+    }
+
+    const referenceId = `LW-${Date.now()}`;
+    const submittedAt = new Date().toLocaleString();
+
+    const html = generateCustomerToSupportEmail(
+      subject,
+      message,
+      customer,
+      mobile,
+      tier,
+      {
+        referenceId,
+        submittedAt,
+      },
+    );
+    const transporter = await createTransporter();
+
+    await transporter.sendMail({
+      from: `"WIN WAY" <${process.env.EMAIL_USER}>`,
+      to: "chamika@winway.lk", // Support inbox
+      subject: `"
+      Loyalty Support Request - ${subject}}`,
+      html,
+    });
+
+    res.json({
+      success: true,
+      message: "Support request sent successfully",
+      referenceId,
+    });
+  } catch (error) {
+    console.error("Loyalty Support Email Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Email sending failed",
+    });
+  }
+};
+router.post("/loyaltySupport", upload.none(), sendLoyaltySupportEmail);
 router.post("/send-loyalty", upload.none(), sendWelcomeEmail);
 
 router.post("/custome-email", upload.none(), sendCustomeEmail);

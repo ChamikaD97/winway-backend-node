@@ -70,6 +70,9 @@ try {
 } catch (err) {
   console.error("❌ Failed to start server:", err);
 }
+app.get("/test", (req, res) => {
+  res.send("Server working");
+});
 
 // SAFETY LOGS
 process.on("exit", (code) => {

@@ -6,7 +6,7 @@ const router = express.Router();
 
 //   db.prepare("DROP TABLE IF EXISTS Monthly_Upgrade_Details").run();
 //  db.prepare("DROP TABLE IF EXISTS Current_Customer_Details").run();
- // db.prepare("DROP TABLE IF EXISTS loyality_promotions").run();
+ //db.prepare("DROP TABLE IF EXISTS loyality_promotions").run();
 
 router.get("/all-customers", (req, res) => {
   try {

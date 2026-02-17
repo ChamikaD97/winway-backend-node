@@ -2230,3 +2230,128 @@ export const generateLoyaltySameEmail = (
 </html>
 `;
 };
+
+export const generateCustomerToSupportEmail = (
+  name = "Valued Customer",
+  message = "",
+  email = "-",
+  mobile = "-",
+  tier = "-",
+) => {
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Loyalty Support Request</title>
+</head>
+
+<body style="margin:0; padding:0; background:#f4f4f7; font-family:Arial, sans-serif;">
+  <table width="100%" cellspacing="0" cellpadding="0">
+    <tr>
+      <td align="center" style="padding:30px 0;">
+
+        <!-- WRAPPER -->
+        <table width="700" style="
+          background:#ffffff;
+          border-radius:18px;
+          overflow:hidden;
+          border:2px solid #e6e6e6;
+          box-shadow:0 8px 30px rgba(0,0,0,0.08);
+        ">
+
+          <!-- HEADER -->
+          <tr>
+            <td style="
+              background:linear-gradient(135deg,#1d2671,#c33764);
+              padding:22px 30px;
+              border-radius:18px 18px 0 0;
+              text-align:center;
+            ">
+              <h2 style="color:#ffffff; margin:0;">
+                WIN WAY Loyalty Support
+              </h2>
+            </td>
+          </tr>
+
+          <!-- BODY -->
+          <tr>
+            <td style="padding:40px; font-size:15px; color:#333; line-height:1.7;">
+
+              <p style="margin:0 0 15px 0;">
+                Dear WIN WAY Loyalty Support Team,
+              </p>
+
+              <!-- CUSTOMER INFO BOX -->
+              <table width="100%" style="
+                background:#f8f9fc;
+                border-radius:10px;
+                padding:15px;
+                margin-bottom:5px;
+              ">
+                <tr>
+                  <td style="padding:6px 0;"><strong>Customer Name:</strong></td>
+                  <td style="padding:6px 0;">${toProperCase(name)}</td>
+                </tr>
+                <tr>
+                  <td style="padding:6px 0;"><strong>Loyalty Tier:</strong></td>
+                  <td style="padding:6px 0;">${tier}</td>
+                </tr>
+                <tr>
+                  <td style="padding:6px 0;"><strong>Mobile:</strong></td>
+                  <td style="padding:6px 0;">${mobile}</td>
+                </tr>
+                <tr>
+                  <td style="padding:6px 0;"><strong>Email:</strong></td>
+                  <td style="padding:6px 0;">${email}</td>
+                </tr>
+              </table>
+
+              <!-- EMBEDDED MESSAGE BOX -->
+              <div style="
+                background:#f0f4ff;
+                border-left:5px solid #1d2671;
+                padding:20px;
+                border-radius:8px;
+                margin-bottom:25px;
+              ">
+                <strong>Customer Message:</strong><br/><br/>
+                ${message}
+              </div>
+
+              <p>
+                Kindly review this request and assist at your earliest convenience.
+              </p>
+
+              <p style="margin-top:30px;">
+                Thank you,<br/>
+                ${toProperCase(name)}
+              </p>
+
+            </td>
+          </tr>
+
+          <!-- FOOTER -->
+          <tr>
+            <td style="
+              background:#f2f2f2;
+              border-top:1px solid #e5e5e5;
+              padding:18px 30px;
+              font-size:13px;
+              color:#666;
+              text-align:center;
+            ">
+              This email was submitted through the WIN WAY Loyalty Dashboard.<br/>
+              © ${new Date().getFullYear()} ThinkCube Systems (Pvt) Ltd.
+            </td>
+          </tr>
+
+        </table>
+
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+`;
+};

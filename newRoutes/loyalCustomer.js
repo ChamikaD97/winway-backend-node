@@ -1080,6 +1080,21 @@ export const deactivatePromotion = (req, res) => {
     },
   );
 };
+export const deletePromotion = (req, res) => {
+  const { id } = req.params;
+
+  db.run(`DELETE FROM loyality_promotions WHERE id = ?`, [id], function (err) {
+    if (err) {
+      return res.status(400).json({ error: err.message });
+    }
+
+    if (this.changes === 0) {
+      return res.status(404).json({ message: "Promotion not found" });
+    }
+
+    res.json({ message: "Promotion permanently deleted" });
+  });
+};
 
 /* =====================================================
    GET PROMOTION IMAGE (API BASED)
@@ -1239,7 +1254,7 @@ router.put(
 
 router.get("/getAllPromotions", getAllPromotions);
 
-router.patch("/deactivatePromotion/:id/deactivate", deactivatePromotion);
+router.patch("/deactivatePromotion/:id/deactivate", deletePromotion);
 
 router.get("/promotions/image/:promotion_code", getPromotionImage);
 
