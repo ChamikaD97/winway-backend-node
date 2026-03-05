@@ -22,7 +22,6 @@ const router = express.Router();
 router.post("/", async (req, res) => {
   const customers = req.body.customers;
 
-
   if (!customers || customers.length === 0) {
     return res
       .status(400)
@@ -41,13 +40,13 @@ router.post("/", async (req, res) => {
         const lastMonth = customer.lastMonth.LotteryBreakdown;
         const current = customer.updated.LotteryBreakdown;
 
-
         console.log(lastMonth);
         console.log(current);
 
         const breakdownResult = await insertLotteryBreakdownUpgrade(
-          customer.MobileNumber,current,
-          lastMonth
+          customer.MobileNumber,
+          current,
+          lastMonth,
         );
 
         breakdownResults.push({
@@ -56,7 +55,7 @@ router.post("/", async (req, res) => {
         });
       } catch (error) {
         console.error(
-          `❌ Failed to process ${customer.MobileNumber}: ${error.message}`
+          `❌ Failed to process ${customer.MobileNumber}: ${error.message}`,
         );
         continue;
       }
@@ -100,71 +99,5 @@ router.get("/combined", async (req, res) => {
 });
 
 // 1️⃣ GET - Current Customers
-router.get("/customers", (req, res) => {
-  const sql = `SELECT * FROM customers`;
-  db.all(sql, [], (err, rows) => {
-    if (err) {
-      console.error("❌ Error fetching customers:", err.message);
-      return res.status(500).json({ success: false, message: err.message });
-    }
-    res.json({
-      success: true,
-      table: "customers",
-      count: rows.length,
-      data: rows,
-    });
-  });
-});
-
-// 2️⃣ GET - Current Month Lottery Breakdown
-router.get("/breakdowns/current", (req, res) => {
-  const sql = `SELECT * FROM lottery_breakdown_overoll`;
-  db.all(sql, [], (err, rows) => {
-    if (err) {
-      console.error("❌ Error fetching current breakdowns:", err.message);
-      return res.status(500).json({ success: false, message: err.message });
-    }
-    res.json({
-      success: true,
-      table: "lottery_breakdown_overoll",
-      count: rows.length,
-      data: rows,
-    });
-  });
-});
-
-// 3️⃣ GET - Last Month Customers
-router.get("/customers/last-month", (req, res) => {
-  const sql = `SELECT * FROM customers_last_month`;
-  db.all(sql, [], (err, rows) => {
-    if (err) {
-      console.error("❌ Error fetching last-month customers:", err.message);
-      return res.status(500).json({ success: false, message: err.message });
-    }
-    res.json({
-      success: true,
-      table: "customers_last_month",
-      count: rows.length,
-      data: rows,
-    });
-  });
-});
-
-// 4️⃣ GET - Last Month Lottery Breakdown
-router.get("/breakdowns/last-month", (req, res) => {
-  const sql = `SELECT * FROM lottery_breakdowns_last_month`;
-  db.all(sql, [], (err, rows) => {
-    if (err) {
-      console.error("❌ Error fetching last-month breakdowns:", err.message);
-      return res.status(500).json({ success: false, message: err.message });
-    }
-    res.json({
-      success: true,
-      table: "lottery_breakdowns_last_month",
-      count: rows.length,
-      data: rows,
-    });
-  });
-});
 
 export default router;
