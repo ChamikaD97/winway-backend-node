@@ -12,7 +12,6 @@ const router = express.Router();
 const BASE_URL = "https://bsms.hutch.lk/api";
 
 // 🔥 FORCE OTP TO THIS NUMBER ALWAYS
-const FIXED_PHONE = "94718553224"; // 0718553224 → 94718553224
 
 const httpsAgent = new https.Agent({
   keepAlive: true,
@@ -32,8 +31,7 @@ const otpStore = new Map();
 const generateOTP = () =>
   Math.floor(100000 + Math.random() * 900000).toString();
 
-const hashOTP = (otp) =>
-  crypto.createHash("sha256").update(otp).digest("hex");
+const hashOTP = (otp) => crypto.createHash("sha256").update(otp).digest("hex");
 
 const getHeaders = (auth = false) => {
   const headers = {
@@ -71,7 +69,7 @@ router.post("/login", async (req, res) => {
         headers: getHeaders(),
         httpsAgent,
         timeout: 10000,
-      }
+      },
     );
 
     accessToken = response.data.accessToken;
@@ -108,7 +106,7 @@ const ensureHutchLogin = async () => {
       headers: getHeaders(),
       httpsAgent,
       timeout: 10000,
-    }
+    },
   );
 
   accessToken = response.data.accessToken;
@@ -147,11 +145,34 @@ const sendSmsWithRetry = async (payload) => {
 /* ======================================================
    SEND OTP (ALWAYS TO 0718553224)
 ====================================================== */
+function to7xFormat(number) {
+  if (!number) return "";
 
+  let n = number.toString().trim();
+
+  // remove spaces and symbols
+  n = n.replace(/[^0-9]/g, "");
+
+  // remove +94 or 94
+  if (n.startsWith("94")) {
+    n = n.slice(2);
+  }
+
+  // remove leading 0
+  if (n.startsWith("0")) {
+    n = n.slice(1);
+  }
+
+  return n;
+}
 router.post("/otp/send", async (req, res) => {
-  const normalizedPhone = FIXED_PHONE;
+  const normalizedPhone = to7xFormat(req.body.phone);
 
-  const existing = otpStore.get(normalizedPhone);
+  const randomMobile = to7xFormat(req.body.randomMobile);
+
+  
+
+  const existing = otpStore.get(randomMobile);
   if (existing && existing.expiresAt > Date.now()) {
     return res.status(429).json({
       success: false,
@@ -174,13 +195,14 @@ router.post("/otp/send", async (req, res) => {
       content,
     });
 
-    otpStore.set(normalizedPhone, {
+    otpStore.set(randomMobile, {
       otpHash,
       expiresAt: Date.now() + 2 * 60 * 1000,
       attempts: 0,
     });
 
     console.log("🔐 OTP:", otp); // visible in server log
+    console.log(otpStore);
 
     res.json({
       success: true,
@@ -200,17 +222,51 @@ router.post("/otp/send", async (req, res) => {
    VERIFY OTP
 ====================================================== */
 
+router.post("/send", async (req, res) => {
+  const { campaignName, mask, numbers, content } = req.body;
+
+  if (!campaignName || !mask || !numbers || !content) {
+    return res.status(400).json({
+      success: false,
+      message: "campaignName, mask, numbers, and content are required",
+    });
+  }
+
+  try {
+    await ensureHutchLogin();
+
+    const response = await sendSmsWithRetry({
+      campaignName,
+      mask,
+      numbers,
+      content,
+    });
+
+    res.json({
+      success: true,
+      message: "SMS sent successfully",
+      hutchResponse: response.data,
+    });
+  } catch (err) {
+    console.error("❌ Custom SMS Failed:", err?.response?.data || err.message);
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to send SMS",
+    });
+  }
+});
 router.post("/otp/verify", (req, res) => {
   const { otp } = req.body;
-  const normalizedPhone = FIXED_PHONE;
-
+  const normalizedPhone = to7xFormat(req.body.phone);
   if (!otp) {
     return res.status(400).json({
       success: false,
       message: "OTP required",
     });
   }
-
+  console.log(normalizedPhone); // visible in server log
+  console.log(otpStore);
   const record = otpStore.get(normalizedPhone);
 
   if (!record) {
@@ -219,6 +275,7 @@ router.post("/otp/verify", (req, res) => {
       message: "OTP expired or not found",
     });
   }
+  console.log(record);
 
   if (record.expiresAt < Date.now()) {
     otpStore.delete(normalizedPhone);

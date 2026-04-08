@@ -25,8 +25,12 @@ import weeklyImagesRoutes from "./routes/weeklyImages.js";
 import saveFile from "./routes/saveFile.js";
 import userPortalRoutes from "./routes/loyalityUserPortalRoutes.js";
 
+
 const app = express();
 
+// 🔥 VERY IMPORTANT
+app.use(express.json({ limit: "100mb" }));
+app.use(express.urlencoded({ limit: "100mb", extended: true }));
 /* ======================================================
    MIDDLEWARE
 ====================================================== */
@@ -36,9 +40,11 @@ app.use(
     origin: [
       "https://loyalty.thinkcube.lk",
       "http://localhost:5173",
+      "http://localhost:3000",
+      "http://localhost:3001",
     ],
     credentials: true,
-  })
+  }),
 );
 
 app.use(express.json());

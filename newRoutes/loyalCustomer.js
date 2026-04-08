@@ -431,6 +431,37 @@ router.get("/monthly-upgrades", async (req, res) => {
   }
 });
 
+router.post("/fix-mobile-format", (req, res) => {
+  try {
+    const sql = `
+      UPDATE Current_Customer_Details
+      SET MobileNumber = REPLACE(MobileNumber, '+', '')
+      WHERE MobileNumber LIKE '+94%';
+    `;
+
+    db.run(sql, function (err) {
+      if (err) {
+        console.error("❌ Error updating mobile numbers:", err);
+        return res.status(500).json({
+          success: false,
+          error: err.message,
+        });
+      }
+
+      return res.json({
+        success: true,
+        message: "✅ Mobile numbers normalized (+94 → 94)",
+        updatedRows: this.changes, // number of rows updated
+      });
+    });
+  } catch (error) {
+    console.error("❌ Unexpected error:", error);
+    return res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
 router.get("/monthly-upgrade-summery", async (req, res) => {
   try {
     const sql = `
@@ -503,15 +534,16 @@ router.post("/monthly-update", async (req, res) => {
 
       let pending = updates.length;
 
-      updates.forEach((entry) => {
+      updates.forEach((entry, i) => {
         const { MobileNumber, Loyalty_Tier, Ticket_Count } = entry;
         const mobile = normalizeToDBFormat(MobileNumber);
         const selectSql = `
-          SELECT Current_Loyalty_Tier, Current_Ticket_Count, Last_Update
-          FROM Current_Customer_Details
-          WHERE MobileNumber = ?
-          LIMIT 1
-        `;
+  SELECT Current_Loyalty_Tier, Current_Ticket_Count, Last_Update
+  FROM Current_Customer_Details
+  WHERE MobileNumber = ?
+     OR MobileNumber = CONCAT('+', ?)
+  LIMIT 1
+`;
 
         // 🔵 SELECT BEFORE
         db.get(selectSql, [mobile], (err, row) => {
@@ -521,15 +553,10 @@ router.post("/monthly-update", async (req, res) => {
           }
 
           if (!row) {
-            console.log(`⚠️ No record found for ${mobile}`);
+            console.log(`${i} ⚠️ No record found for ${mobile}`);
             pending--;
             return;
           }
-
-          console.log("====================================");
-          console.log("📱 Mobile:", mobile);
-          console.log("🔵 BEFORE (DB)");
-          console.log(row);
 
           const lastTier = row.Current_Loyalty_Tier || null;
           const lastTicketCount = row.Current_Ticket_Count || 0;
@@ -544,6 +571,13 @@ router.post("/monthly-update", async (req, res) => {
             Loyalty_Tier === "Blue"
           ) {
             newTier = "Rejected";
+          } else if (
+            row.Current_Loyalty_Tier === "Rejected" &&
+            Loyalty_Tier === "Blue"
+          ) {
+            console.log("===========******=======", MobileNumber);
+
+            newTier = "Removed";
           }
 
           const TierPriority = [
@@ -553,6 +587,7 @@ router.post("/monthly-update", async (req, res) => {
             "Blue",
             "Warning",
             "Rejected",
+            "Removed",
           ];
 
           let Evaluation_Status = "Same";
@@ -604,18 +639,8 @@ router.post("/monthly-update", async (req, res) => {
                 console.error(`❌ Update failed ${mobile}:`, err.message);
                 return;
               }
-
-              console.log("Rows Affected:", this.changes);
-
               // 🟢 SELECT AFTER
               db.get(selectSql, [mobile], (err, afterRow) => {
-                if (!err && afterRow) {
-                  console.log("🟢 AFTER (DB)");
-                  console.log(afterRow);
-                }
-
-                console.log("====================================");
-
                 // Continue monthly insert
                 const insertMonthlySql = `
                   INSERT INTO Monthly_Upgrade_Details (
