@@ -84,6 +84,8 @@ INSERT OR REPLACE INTO Current_Customer_Details (
           Ticket_Count,
           Loyalty_Tier,
         } = cust;
+        console.log(current_count + i, MobileNumber, Loyalty_Tier, Ticket_Count);
+
 
         const Loyalty_Number = `0884  2025  0000  ${String(
           current_count + i,

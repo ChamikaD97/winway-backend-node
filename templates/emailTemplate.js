@@ -758,9 +758,13 @@ export const generateLoyaltUpgradeEmail = (
 ) => {
   const info = customer?.CustomerInfo || {};
   const tier = info?.Current_Loyalty_Tier || "-";
-  const gender = info?.Gender || "-";
-  const prevTier = info?.lastMonthLoyaltyTier || "-";
+  const gender = info?.Gender || "-";const prevTierRaw = info?.lastMonthLoyaltyTier || "-";
 
+const prevTier =
+  ["warning", "rejected"].includes(prevTierRaw?.toLowerCase())
+    ? "Blue"
+    : prevTierRaw;
+    
   const salutation =
     gender === "Male" ? "Mr." : gender === "Female" ? "Ms." : "";
 
